@@ -104,7 +104,7 @@ gamine-local/
 
    # Kiểm tra xem admin đã tồn tại chưa
    with connection.cursor() as cursor:
-       cursor.execute('SELECT id FROM core_admin WHERE username = %s', [username])
+       cursor.execute('SELECT admin_id FROM core_admin WHERE username = %s', [username])
        exists = cursor.fetchone()
        
        if exists:
