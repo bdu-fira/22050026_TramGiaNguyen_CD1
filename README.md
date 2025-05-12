@@ -1,4 +1,4 @@
-# DỰ ÁN GAMINE - NỀN TẢNG THƯƠNG MẠI ĐIỆN TỬ GAME
+# DỰ ÁN GAMINE - NỀN TẢNG THƯƠNG MẠI ĐIỆN TỬ THIẾT BỊ GAMING
 
 Đây là file giới thiệu chung, chi tiết về cách triển khai và chạy ứng dụng sẽ có trong file README riêng của từng phiên bản bên trên.
 
