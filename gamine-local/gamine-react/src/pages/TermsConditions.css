@@ -1,0 +1,227 @@
+.loading-spinner {
+  width: 60px;
+  height: 60px;
+  border: 5px solid rgba(0, 255, 234, 0.2);
+  border-radius: 50%;
+  border-top-color: var(--color-primary);
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+.terms-container {
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: 80px 20px 60px;
+  position: relative;
+}
+
+.terms-header {
+  text-align: center;
+  margin-bottom: 50px;
+  position: relative;
+}
+
+.terms-header h2 {
+  font-family: var(--font-display);
+  font-size: 36px;
+  color: var(--color-primary);
+  margin-bottom: 15px;
+  text-shadow: 0 0 15px var(--color-primary-glow);
+  position: relative;
+  display: inline-block;
+}
+
+.terms-header h2::after {
+  content: '';
+  position: absolute;
+  bottom: -10px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 80px;
+  height: 3px;
+  background: linear-gradient(90deg, var(--color-primary), var(--color-accent));
+  border-radius: 3px;
+}
+
+.terms-header p {
+  font-size: 16px;
+  color: var(--color-text-muted);
+  margin-top: 15px;
+}
+
+.terms-content {
+  background: rgba(19, 19, 32, 0.5);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: var(--border-radius-lg);
+  padding: 40px;
+  box-shadow: var(--shadow-lg);
+  position: relative;
+  z-index: 1;
+  overflow: hidden;
+}
+
+.terms-content::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 300px;
+  height: 300px;
+  background: radial-gradient(circle, rgba(0, 255, 234, 0.1) 0%, transparent 70%);
+  z-index: -1;
+  border-radius: 50%;
+}
+
+.terms-section {
+  margin-bottom: 40px;
+  color: var(--color-text);
+  position: relative;
+}
+
+.terms-section:last-child {
+  margin-bottom: 0;
+}
+
+.terms-section h3 {
+  font-family: var(--font-display);
+  font-size: 22px;
+  color: var(--color-primary);
+  margin-bottom: 20px;
+  text-shadow: 0 0 5px rgba(0, 255, 234, 0.3);
+  position: relative;
+  padding-left: 20px;
+}
+
+.terms-section h3::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 8px;
+  height: 26px;
+  background: var(--color-primary);
+  border-radius: 4px;
+  box-shadow: 0 0 10px var(--color-primary-glow);
+}
+
+.terms-section p {
+  line-height: 1.7;
+  margin-bottom: 15px;
+  font-size: 15px;
+}
+
+.terms-section p strong {
+  color: var(--color-primary);
+  font-weight: 600;
+}
+
+.terms-section ul {
+  margin: 0 0 20px 25px;
+}
+
+.terms-section li {
+  margin-bottom: 10px;
+  line-height: 1.6;
+  position: relative;
+  font-size: 15px;
+}
+
+.terms-section li::before {
+  content: '';
+  position: absolute;
+  left: -18px;
+  top: 12px;
+  width: 6px;
+  height: 1px;
+  background-color: var(--color-primary);
+}
+
+/* Cyberpunk decorative elements */
+.cyber-corner {
+  position: absolute;
+  width: 50px;
+  height: 50px;
+  z-index: 0;
+}
+
+.cyber-corner.top-left {
+  top: 40px;
+  left: 20px;
+  border-top: 2px solid var(--color-primary);
+  border-left: 2px solid var(--color-primary);
+  border-radius: 8px 0 0 0;
+}
+
+.cyber-corner.top-right {
+  top: 40px;
+  right: 20px;
+  border-top: 2px solid var(--color-secondary);
+  border-right: 2px solid var(--color-secondary);
+  border-radius: 0 8px 0 0;
+}
+
+.cyber-corner.bottom-left {
+  bottom: 40px;
+  left: 20px;
+  border-bottom: 2px solid var(--color-accent);
+  border-left: 2px solid var(--color-accent);
+  border-radius: 0 0 0 8px;
+}
+
+.cyber-corner.bottom-right {
+  bottom: 40px;
+  right: 20px;
+  border-bottom: 2px solid var(--color-primary);
+  border-right: 2px solid var(--color-primary);
+  border-radius: 0 0 8px 0;
+}
+
+@media (max-width: 768px) {
+  .terms-container {
+    padding: 70px 15px 40px;
+  }
+  
+  .terms-header h2 {
+    font-size: 28px;
+  }
+  
+  .terms-content {
+    padding: 30px 20px;
+  }
+  
+  .terms-section h3 {
+    font-size: 20px;
+  }
+  
+  .cyber-corner {
+    width: 30px;
+    height: 30px;
+  }
+}
+
+@media (max-width: 480px) {
+  .terms-header h2 {
+    font-size: 24px;
+  }
+  
+  .terms-section h3 {
+    font-size: 18px;
+    padding-left: 15px;
+  }
+  
+  .terms-section h3::before {
+    width: 5px;
+    height: 20px;
+  }
+} 

@@ -1,0 +1,61 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  db:
+    image: postgres:14
+    container_name: gamine-postgres
+    environment:
+      POSTGRES_DB: gamine_admin
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: 1412
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    restart: unless-stopped
+
+  # Django Backend
+  backend:
+    build: 
+      context: ./admin/backend
+      dockerfile: Dockerfile
+    container_name: gamine-backend
+    depends_on:
+      - db
+    environment:
+      - DATABASE_HOST=db
+      - DATABASE_NAME=gamine_admin
+      - DATABASE_USER=postgres
+      - DATABASE_PASSWORD=1412
+      - DATABASE_PORT=5432
+    ports:
+      - "8000:8000"
+    restart: unless-stopped
+
+  # Admin Panel Frontend (React)
+  admin-panel:
+    build:
+      context: ./admin-panel
+      dockerfile: Dockerfile
+    container_name: gamine-admin-panel
+    ports:
+      - "3000:80"
+    depends_on:
+      - backend
+    restart: unless-stopped
+
+  # Main Frontend (React)
+  gamine-react:
+    build:
+      context: ./gamine-react
+      dockerfile: Dockerfile
+    container_name: gamine-frontend
+    ports:
+      - "3001:80"
+    depends_on:
+      - backend
+    restart: unless-stopped
+
+volumes:
+  postgres_data: 

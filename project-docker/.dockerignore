@@ -1,0 +1,43 @@
+# Common
+node_modules
+npm-debug.log
+yarn-debug.log
+yarn-error.log
+.git
+.gitignore
+.idea
+.vscode
+*.env
+*.env.*
+*.log
+README.md
+
+# Django
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+*.egg-info/
+.installed.cfg
+*.egg
+media/
+staticfiles/
+
+# React
+coverage/
+build/
+.DS_Store 

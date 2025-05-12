@@ -1,0 +1,518 @@
+.support-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 40px 20px;
+  position: relative;
+}
+
+/* Cyberpunk decorative elements */
+.cyber-circuit {
+  position: absolute;
+  background-image: linear-gradient(135deg, rgba(0, 225, 255, 0.05) 25%, transparent 25%, transparent 50%, rgba(0, 225, 255, 0.05) 50%, rgba(0, 225, 255, 0.05) 75%, transparent 75%, transparent);
+  background-size: 40px 40px;
+  opacity: 0.15;
+  pointer-events: none;
+  z-index: -1;
+}
+
+.cyber-circuit.left {
+  top: 20%;
+  left: -100px;
+  width: 300px;
+  height: 500px;
+  transform: rotate(-15deg);
+}
+
+.cyber-circuit.right {
+  bottom: 10%;
+  right: -100px;
+  width: 300px;
+  height: 400px;
+  transform: rotate(15deg);
+}
+
+.cyber-dot {
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background-color: #00FFEA;
+  box-shadow: 0 0 15px #00FFEA;
+  animation: pulse 4s infinite alternate;
+  z-index: -1;
+}
+
+.cyber-dot.dot1 {
+  top: 15%;
+  right: 10%;
+  animation-delay: 0.7s;
+}
+
+.cyber-dot.dot2 {
+  bottom: 20%;
+  left: 5%;
+  animation-delay: 2s;
+}
+
+.cyber-dot.dot3 {
+  top: 50%;
+  left: 50%;
+  animation-delay: 1.3s;
+}
+
+@keyframes pulse {
+  0% { transform: scale(0.8); opacity: 0.3; }
+  100% { transform: scale(1.2); opacity: 0.7; }
+}
+
+.support-header {
+  text-align: center;
+  margin-bottom: 60px;
+  position: relative;
+}
+
+.support-header::after {
+  content: '';
+  position: absolute;
+  bottom: -20px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 100px;
+  height: 3px;
+  background: linear-gradient(90deg, var(--color-primary), var(--color-accent));
+  border-radius: 2px;
+  box-shadow: 0 0 15px var(--color-primary-glow);
+}
+
+.support-header h2 {
+  font-family: var(--font-display);
+  font-size: 42px;
+  font-weight: 700;
+  color: var(--color-primary);
+  margin-bottom: 15px;
+  text-shadow: 0 0 15px var(--color-primary-glow);
+  position: relative;
+  display: inline-block;
+}
+
+.support-header p {
+  font-size: 18px;
+  color: var(--color-text-muted);
+  max-width: 600px;
+  margin: 0 auto;
+  line-height: 1.6;
+}
+
+.support-tabs {
+  display: flex;
+  justify-content: center;
+  gap: 30px;
+  margin-bottom: 30px;
+}
+
+.tab-button {
+  padding: 12px 30px;
+  background: rgba(19, 19, 32, 0.7);
+  color: var(--color-text);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: var(--border-radius);
+  font-family: var(--font-display);
+  font-size: 16px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+  min-width: 200px;
+}
+
+.tab-button::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+  transition: left 0.5s ease;
+}
+
+.tab-button.active {
+  background: rgba(19, 19, 32, 0.5);
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+  box-shadow: 0 0 10px var(--color-primary-glow);
+}
+
+.tab-button:hover {
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+}
+
+.tab-button:hover::before {
+  left: 100%;
+}
+
+.support-content {
+  background: rgba(19, 19, 32, 0.5);
+  backdrop-filter: blur(10px);
+  border-radius: var(--border-radius-lg);
+  padding: 30px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  box-shadow: var(--shadow-md);
+  transition: all 0.3s ease;
+  position: relative;
+}
+
+.support-content:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 15px 30px rgba(0, 0, 0, 0.2), 0 0 15px var(--color-primary-glow);
+}
+
+.support-content h3 {
+  font-family: var(--font-display);
+  font-size: 28px;
+  color: var(--color-primary);
+  margin-bottom: 25px;
+  position: relative;
+  display: inline-block;
+  text-shadow: 0 0 8px var(--color-primary-glow);
+  padding-bottom: 10px;
+}
+
+.support-content h3::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 60px;
+  height: 2px;
+  background: var(--color-primary);
+  box-shadow: 0 0 8px var(--color-primary-glow);
+}
+
+.support-content p {
+  color: var(--color-text-muted);
+  margin-bottom: 20px;
+  line-height: 1.6;
+}
+
+/* FAQ Section */
+.faq-list {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.faq-item {
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: var(--border-radius);
+  overflow: hidden;
+  transition: all 0.3s ease;
+  background: rgba(19, 19, 32, 0.7);
+}
+
+.faq-item:hover {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 10px var(--color-primary-glow);
+}
+
+.faq-question {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 15px 20px;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+.faq-question.active {
+  background-color: rgba(19, 19, 32, 0.9);
+}
+
+.faq-question h4 {
+  font-family: var(--font-display);
+  font-size: 16px;
+  color: var(--color-text);
+  margin: 0;
+  transition: color 0.3s ease;
+}
+
+.faq-question:hover h4 {
+  color: var(--color-primary);
+}
+
+.toggle-icon {
+  font-size: 20px;
+  color: var(--color-primary);
+  transition: transform 0.3s ease;
+}
+
+.faq-question.active .toggle-icon {
+  transform: rotate(180deg);
+}
+
+.faq-answer {
+  padding: 0 20px 15px;
+  background-color: rgba(19, 19, 32, 0.7);
+}
+
+.faq-answer p {
+  color: var(--color-text-muted);
+  line-height: 1.6;
+  margin: 0;
+}
+
+/* Loading và Error state */
+.loading-indicator, .error-message {
+  text-align: center;
+  padding: 30px;
+  color: var(--color-text-muted);
+  background: rgba(19, 19, 32, 0.5);
+  border-radius: var(--border-radius);
+  margin: 20px 0;
+  border: 1px dashed rgba(255, 255, 255, 0.1);
+}
+
+.loading-indicator {
+  position: relative;
+}
+
+.loading-indicator::after {
+  content: '';
+  display: block;
+  width: 30px;
+  height: 30px;
+  border: 3px solid rgba(0, 255, 234, 0.3);
+  border-top-color: var(--color-primary);
+  border-radius: 50%;
+  margin: 15px auto 0;
+  animation: spin 1s linear infinite;
+}
+
+.error-message {
+  color: var(--color-accent);
+  border-color: rgba(255, 87, 51, 0.3);
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Support Form */
+.contact-info-grid {
+  display: grid;
+  grid-template-columns: 1fr 1.5fr;
+  gap: 40px;
+  margin-top: 30px;
+}
+
+.contact-details {
+  background: rgba(19, 19, 32, 0.7);
+  border-radius: var(--border-radius);
+  padding: 25px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  transition: all 0.3s;
+  height: fit-content;
+}
+
+.contact-details:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.15), 0 0 15px var(--color-primary-glow);
+  border-color: var(--color-primary);
+}
+
+.contact-details h4 {
+  color: var(--color-primary);
+  font-family: var(--font-display);
+  font-size: 22px;
+  margin-bottom: 20px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.contact-item {
+  margin-bottom: 20px;
+}
+
+.contact-item h5 {
+  color: var(--color-accent);
+  font-size: 16px;
+  margin-bottom: 5px;
+}
+
+.contact-item p {
+  color: var(--color-text-muted);
+  margin: 0 0 5px 0;
+  font-size: 15px;
+}
+
+.support-form {
+  max-width: 700px;
+  margin: 0 auto;
+}
+
+.form-group {
+  margin-bottom: 20px;
+  position: relative;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 8px;
+  color: var(--color-text);
+  font-weight: 500;
+  transition: color 0.3s ease;
+}
+
+.form-group:hover label {
+  color: var(--color-primary);
+}
+
+.form-group input,
+.form-group textarea,
+.form-group select {
+  width: 100%;
+  padding: 12px 15px;
+  background: rgba(19, 19, 32, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: var(--border-radius);
+  color: var(--color-text);
+  outline: none;
+  transition: border 0.3s, box-shadow 0.3s;
+}
+
+.form-group input:focus,
+.form-group textarea:focus,
+.form-group select:focus {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 8px var(--color-primary-glow);
+}
+
+.submit-btn {
+  width: 100%;
+  padding: 12px 0;
+  background: linear-gradient(90deg, var(--color-primary), var(--color-accent));
+  color: var(--color-dark);
+  border: none;
+  border-radius: var(--border-radius);
+  font-family: var(--font-display);
+  font-size: 16px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.3s;
+  position: relative;
+  overflow: hidden;
+}
+
+.submit-btn::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+  transition: left 0.5s ease;
+}
+
+.submit-btn:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.15), 0 0 15px var(--color-primary-glow);
+}
+
+.submit-btn:hover::before {
+  left: 100%;
+}
+
+/* Troubleshooting */
+.product-categories {
+  display: none;
+}
+
+.category-card {
+  display: none;
+}
+
+/* Cyberpunk decorative elements */
+.cyber-circle {
+  position: absolute;
+  width: 300px;
+  height: 300px;
+  border-radius: 50%;
+  border: 1px solid var(--color-primary);
+  opacity: 0.1;
+  pointer-events: none;
+}
+
+.cyber-circle.top-right {
+  top: 50px;
+  right: -100px;
+}
+
+.cyber-circle.bottom-left {
+  bottom: 100px;
+  left: -150px;
+}
+
+.cyber-line {
+  position: absolute;
+  width: 2px;
+  background: linear-gradient(to bottom, var(--color-primary), transparent);
+  opacity: 0.2;
+  pointer-events: none;
+}
+
+.cyber-line.left {
+  height: 200px;
+  left: 50px;
+  top: 300px;
+}
+
+.cyber-line.right {
+  height: 150px;
+  right: 100px;
+  top: 500px;
+}
+
+/* Responsive Adjustments */
+@media (max-width: 768px) {
+  .support-tabs {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .tab-button {
+    min-width: 100%;
+  }
+  
+  .support-header h2 {
+    font-size: 36px;
+  }
+  
+  .support-header p {
+    font-size: 16px;
+  }
+  
+  .support-content h3 {
+    font-size: 24px;
+  }
+  
+  .cyber-circle, .cyber-line {
+    display: none;
+  }
+  
+  .contact-info-grid {
+    grid-template-columns: 1fr;
+    gap: 30px;
+  }
+}
+
+@media (max-width: 480px) {
+  .support-container {
+    padding: 30px 15px;
+  }
+  
+  .support-content {
+    padding: 20px;
+  }
+} 

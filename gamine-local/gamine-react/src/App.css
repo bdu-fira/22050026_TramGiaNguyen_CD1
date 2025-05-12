@@ -1,0 +1,327 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: 'Outfit', sans-serif;
+}
+
+body {
+  background-color: #0a0a12;
+  color: #e0e0e6;
+  font-family: 'Outfit', sans-serif;
+  overflow-x: hidden;
+  background-image: 
+    linear-gradient(to bottom, rgba(15, 15, 25, 0.8), rgba(10, 10, 18, 0.9)),
+    url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100"><rect width="100%" height="100%" fill="none"/><path d="M0,0 L100,100 M0,100 L100,0" stroke="rgba(0,255,234,0.05)" stroke-width="0.5"/></svg>');
+  background-attachment: fixed;
+}
+
+a {
+  color: #00FFEA;
+  text-decoration: none;
+  transition: all 0.3s ease;
+  position: relative;
+}
+
+a:hover {
+  color: #ff3c78;
+  text-decoration: none;
+}
+
+a:after {
+  content: '';
+  position: absolute;
+  width: 0;
+  height: 1px;
+  bottom: -2px;
+  left: 0;
+  background-color: #ff3c78;
+  transition: width 0.3s ease;
+}
+
+a:hover:after {
+  width: 100%;
+}
+
+/* App Container */
+.App {
+  text-align: center;
+  min-height: 100vh;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Main Content */
+main {
+  flex: 1;
+  position: relative;
+  z-index: 1;
+}
+
+/* Router content container */
+.content {
+  position: relative;
+  min-height: calc(100vh - 80px);
+  width: 100%;
+}
+
+/* Page container for all pages */
+.page-container {
+  padding-top: 100px;
+  width: 100%;
+  max-width: 1400px;
+  margin: 0 auto;
+  padding-left: 20px;
+  padding-right: 20px;
+  position: relative;
+}
+
+.page-container::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: 
+    radial-gradient(circle at 20% 30%, rgba(0, 255, 234, 0.07) 0%, transparent 50%),
+    radial-gradient(circle at 80% 70%, rgba(255, 60, 120, 0.05) 0%, transparent 50%);
+  pointer-events: none;
+}
+
+/* Ensure top margin is reset */
+.App > *:first-child {
+  margin-top: 0;
+}
+
+/* Import Google Fonts */
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Orbitron:wght@400;500;600;700&display=swap');
+
+/* Glass effect for components */
+.glass-panel {
+  background: rgba(14, 14, 22, 0.8);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 16px;
+  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+  padding: 30px;
+  transition: all 0.3s ease;
+}
+
+.glass-panel:hover {
+  box-shadow: 0 8px 32px rgba(0, 255, 234, 0.2);
+}
+
+/* Modern buttons */
+.btn {
+  font-family: 'Orbitron', sans-serif;
+  display: inline-block;
+  padding: 12px 28px;
+  background: linear-gradient(135deg, #0a0a12 0%, #131320 100%);
+  color: #fff;
+  border: 1px solid #00FFEA;
+  border-radius: 8px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  position: relative;
+  overflow: hidden;
+  z-index: 1;
+  transition: all 0.3s ease;
+  cursor: pointer;
+}
+
+.btn::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 0;
+  height: 100%;
+  background: linear-gradient(90deg, #00FFEA 0%, #5336ff 100%);
+  z-index: -1;
+  transition: 0.5s cubic-bezier(0.165, 0.84, 0.44, 1);
+}
+
+.btn:hover {
+  color: #0a0a12;
+  border-color: transparent;
+  box-shadow: 0 0 15px rgba(0, 255, 234, 0.5);
+  transform: translateY(-2px);
+}
+
+.btn:hover::before {
+  width: 100%;
+}
+
+/* Button variations */
+.btn-primary {
+  background: linear-gradient(90deg, #00FFEA 0%, #5336ff 100%);
+  border: none;
+  color: #0a0a12;
+}
+
+.btn-primary:hover {
+  box-shadow: 0 0 20px rgba(0, 255, 234, 0.7);
+}
+
+.btn-secondary {
+  background: transparent;
+  border: 1px solid #ff3c78;
+}
+
+.btn-secondary:hover::before {
+  background: linear-gradient(90deg, #ff3c78 0%, #ff8e3c 100%);
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.fade-in {
+  animation: fadeIn 0.6s ease forwards;
+  }
+
+@keyframes glowPulse {
+  0% { box-shadow: 0 0 5px rgba(0, 255, 234, 0.5); }
+  50% { box-shadow: 0 0 20px rgba(0, 255, 234, 0.8); }
+  100% { box-shadow: 0 0 5px rgba(0, 255, 234, 0.5); }
+}
+
+.glow-pulse {
+  animation: glowPulse 2s infinite;
+}
+
+/* Cyberpunk section dividers */
+.cyber-divider {
+  height: 3px;
+  background: linear-gradient(90deg, transparent, #00FFEA, transparent);
+  margin: 40px 0;
+  position: relative;
+}
+
+.cyber-divider::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 40px;
+  height: 40px;
+  background: #0a0a12;
+  border: 2px solid #00FFEA;
+  border-radius: 50%;
+  box-shadow: 0 0 15px rgba(0, 255, 234, 0.7);
+}
+
+/* Responsive enhancements */
+@media (max-width: 1200px) {
+  .page-container {
+    max-width: 100%;
+    padding-left: 20px;
+    padding-right: 20px;
+  }
+}
+
+@media (max-width: 992px) {
+  .glass-panel {
+    padding: 20px;
+  }
+  
+  .page-container {
+    padding-top: 90px;
+  }
+  
+  .cyber-divider::before {
+    width: 30px;
+    height: 30px;
+  }
+}
+
+@media (max-width: 768px) {
+  .App {
+    overflow-x: hidden;
+  }
+  
+  .content {
+    min-height: calc(100vh - 60px);
+  }
+  
+  .page-container {
+    padding-top: 80px;
+    padding-left: 15px;
+    padding-right: 15px;
+  }
+  
+  .glass-panel {
+    padding: 15px;
+    border-radius: 12px;
+  }
+  
+  .btn {
+    padding: 10px 20px;
+  }
+  
+  .cyber-divider {
+    margin: 30px 0;
+  }
+  
+  .cyber-divider::before {
+    width: 25px;
+    height: 25px;
+  }
+}
+
+@media (max-width: 576px) {
+  .page-container {
+    padding-top: 70px;
+    padding-left: 10px;
+    padding-right: 10px;
+  }
+  
+  .glass-panel {
+    padding: 12px;
+    border-radius: 10px;
+  }
+  
+  .btn {
+    padding: 8px 16px;
+    font-size: 13px;
+  }
+  
+  .cyber-divider {
+    margin: 25px 0;
+  }
+  
+  .cyber-divider::before {
+    width: 20px;
+    height: 20px;
+  }
+}
+
+/* Fix for fixed headers on mobile */
+@supports (-webkit-touch-callout: none) {
+  /* iOS devices */
+  .page-container {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+  
+  .site-header {
+    padding-top: env(safe-area-inset-top);
+  }
+}
+
+/* Ensure buttons and interactive elements have proper touch targets */
+@media (max-width: 768px) {
+  button, 
+  input[type="button"], 
+  input[type="submit"],
+  .btn,
+  a.btn {
+    min-height: 44px;
+  }
+}

@@ -1,0 +1,337 @@
+.about-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 40px 20px;
+  position: relative;
+}
+
+.about-header {
+  text-align: center;
+  margin-bottom: 60px;
+  position: relative;
+}
+
+.about-header::after {
+  content: '';
+  position: absolute;
+  bottom: -20px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 140px;
+  height: 3px;
+  background: linear-gradient(90deg, var(--color-primary), var(--color-accent));
+  border-radius: 2px;
+  box-shadow: 0 0 15px var(--color-primary-glow);
+}
+
+.about-header h2 {
+  font-family: var(--font-display);
+  font-size: 42px;
+  font-weight: 700;
+  color: var(--color-primary);
+  margin-bottom: 15px;
+  text-shadow: 0 0 15px var(--color-primary-glow);
+  position: relative;
+  display: inline-block;
+  letter-spacing: 0.5px;
+}
+
+.about-header p {
+  font-size: 18px;
+  color: var(--color-text-muted);
+  max-width: 600px;
+  margin: 0 auto;
+  line-height: 1.6;
+}
+
+.about-content {
+  position: relative;
+  z-index: 1;
+}
+
+.about-section {
+  margin-bottom: 80px;
+  position: relative;
+}
+
+.about-section:last-child {
+  margin-bottom: 0;
+}
+
+.about-section::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-image: 
+    radial-gradient(circle at 20% 30%, rgba(0, 255, 234, 0.05) 0%, transparent 50%),
+    radial-gradient(circle at 80% 70%, rgba(255, 60, 120, 0.05) 0%, transparent 50%);
+  z-index: -1;
+  pointer-events: none;
+}
+
+.about-section h3 {
+  font-family: var(--font-display);
+  font-size: 28px;
+  color: var(--color-primary);
+  margin-bottom: 25px;
+  position: relative;
+  display: inline-block;
+  text-shadow: 0 0 8px var(--color-primary-glow);
+  padding-bottom: 10px;
+  letter-spacing: 0.5px;
+}
+
+.about-section h3::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 60px;
+  height: 2px;
+  background: var(--color-primary);
+  box-shadow: 0 0 8px var(--color-primary-glow);
+}
+
+.about-section p {
+  font-size: 16px;
+  line-height: 1.8;
+  margin-bottom: 20px;
+  color: var(--color-text);
+}
+
+/* Team Section */
+.team-section {
+  margin-top: 30px;
+}
+
+.team-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 30px;
+  margin-top: 40px;
+}
+
+.team-member {
+  background: rgba(19, 19, 32, 0.5);
+  backdrop-filter: blur(10px);
+  border-radius: var(--border-radius-lg);
+  padding: 30px;
+  text-align: center;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  box-shadow: var(--shadow-md);
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.team-member::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 5px;
+  background: linear-gradient(90deg, var(--color-primary), var(--color-accent));
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.team-member:hover {
+  transform: translateY(-10px);
+  box-shadow: 0 15px 30px rgba(0, 0, 0, 0.2), 0 0 15px var(--color-primary-glow);
+}
+
+.team-member:hover::before {
+  opacity: 1;
+}
+
+.team-member img {
+  width: 150px;
+  height: 150px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 3px solid var(--color-primary);
+  box-shadow: 0 0 15px var(--color-primary-glow);
+  margin-bottom: 20px;
+}
+
+.team-member h4 {
+  font-family: var(--font-display);
+  font-size: 20px;
+  color: var(--color-text);
+  margin-bottom: 5px;
+  position: relative;
+  display: inline-block;
+  letter-spacing: 0.3px;
+}
+
+.team-member .title {
+  font-size: 16px;
+  color: var(--color-primary);
+  margin-bottom: 15px;
+  font-weight: 500;
+  letter-spacing: 0.5px;
+}
+
+.team-member .bio {
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--color-text-muted);
+}
+
+/* Values Section */
+.values-container {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 30px;
+  margin-top: 40px;
+}
+
+.value-box {
+  background: rgba(19, 19, 32, 0.5);
+  backdrop-filter: blur(10px);
+  border-radius: var(--border-radius-lg);
+  padding: 25px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  box-shadow: var(--shadow-md);
+  transition: all 0.3s ease;
+  position: relative;
+  z-index: 1;
+  overflow: hidden;
+}
+
+.value-box::before {
+  content: '';
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  top: 0;
+  left: 0;
+  background: linear-gradient(135deg, rgba(0, 255, 234, 0.1) 0%, transparent 100%);
+  z-index: -1;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.value-box:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.15), 0 0 15px var(--color-primary-glow);
+}
+
+.value-box:hover::before {
+  opacity: 1;
+}
+
+.value-box h4 {
+  font-family: var(--font-display);
+  font-size: 20px;
+  color: var(--color-primary);
+  margin-bottom: 15px;
+  text-shadow: 0 0 5px var(--color-primary-glow);
+  letter-spacing: 0.3px;
+}
+
+.value-box p {
+  font-size: 15px;
+  line-height: 1.6;
+  color: var(--color-text);
+  margin-bottom: 0;
+}
+
+.value-icon {
+  color: var(--color-primary);
+  font-size: 24px;
+  margin-bottom: 15px;
+  display: inline-block;
+}
+
+/* Cyberpunk decorative elements */
+.cyber-circle {
+  position: absolute;
+  width: 300px;
+  height: 300px;
+  border-radius: 50%;
+  border: 1px solid var(--color-primary);
+  opacity: 0.1;
+  pointer-events: none;
+}
+
+.cyber-circle.top-right {
+  top: 50px;
+  right: -100px;
+}
+
+.cyber-circle.bottom-left {
+  bottom: 100px;
+  left: -150px;
+}
+
+.cyber-line {
+  position: absolute;
+  width: 2px;
+  background: linear-gradient(to bottom, var(--color-primary), transparent);
+  opacity: 0.2;
+  pointer-events: none;
+}
+
+.cyber-line.left {
+  height: 200px;
+  left: 50px;
+  top: 300px;
+}
+
+.cyber-line.right {
+  height: 150px;
+  right: 100px;
+  top: 500px;
+}
+
+/* Responsive Adjustments */
+@media (max-width: 768px) {
+  .team-grid, .values-container {
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 20px;
+  }
+  
+  .about-header h2 {
+    font-size: 36px;
+  }
+  
+  .about-header p {
+    font-size: 16px;
+  }
+  
+  .about-section h3 {
+    font-size: 24px;
+  }
+  
+  .cyber-circle, .cyber-line {
+    display: none;
+  }
+}
+
+@media (max-width: 480px) {
+  .about-container {
+    padding: 30px 15px;
+  }
+  
+  .about-section {
+    margin-bottom: 50px;
+  }
+  
+  .team-grid, .values-container {
+    grid-template-columns: 1fr;
+  }
+  
+  .team-member {
+    padding: 20px;
+  }
+  
+  .team-member img {
+    width: 120px;
+    height: 120px;
+  }
+} 

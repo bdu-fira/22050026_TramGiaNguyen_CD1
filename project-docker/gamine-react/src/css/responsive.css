@@ -1,0 +1,266 @@
+/* Comprehensive Responsive Design Rules */
+
+/* Base responsive rules */
+* {
+  box-sizing: border-box;
+}
+
+html, body {
+  overflow-x: hidden;
+  position: relative;
+  width: 100%;
+}
+
+/* Responsive images and media */
+img, video, iframe {
+  max-width: 100%;
+  height: auto;
+}
+
+/* Responsive tables */
+table {
+  width: 100%;
+  overflow-x: auto;
+  display: block;
+}
+
+@media screen and (max-width: 1440px) {
+  .container, .page-container {
+    max-width: 1200px;
+    padding-left: 24px;
+    padding-right: 24px;
+  }
+}
+
+@media screen and (max-width: 1200px) {
+  .container, .page-container {
+    max-width: 100%;
+    padding-left: 20px;
+    padding-right: 20px;
+  }
+  
+  /* Grid adjustments */
+  .grid-4-cols, .grid-3-cols {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media screen and (max-width: 992px) {
+  body {
+    font-size: 15px;
+  }
+  
+  h1, .h1 {
+    font-size: 2.5rem;
+  }
+  
+  h2, .h2 {
+    font-size: 2rem;
+  }
+  
+  h3, .h3 {
+    font-size: 1.75rem;
+  }
+  
+  h4, .h4 {
+    font-size: 1.5rem;
+  }
+  
+  /* Padding adjustments */
+  .section {
+    padding: 60px 0;
+  }
+  
+  /* Grid adjustments */
+  .grid-4-cols, .grid-3-cols {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 20px;
+  }
+  
+  /* Card adjustments */
+  .card {
+    padding: 20px;
+  }
+}
+
+@media screen and (max-width: 768px) {
+  body {
+    font-size: 14px;
+  }
+  
+  h1, .h1 {
+    font-size: 2.2rem;
+  }
+  
+  h2, .h2 {
+    font-size: 1.8rem;
+  }
+  
+  h3, .h3 {
+    font-size: 1.5rem;
+  }
+  
+  h4, .h4 {
+    font-size: 1.3rem;
+  }
+  
+  /* Padding adjustments */
+  .section {
+    padding: 50px 0;
+  }
+  
+  .container, .page-container {
+    padding-left: 15px;
+    padding-right: 15px;
+  }
+  
+  /* Button adjustments */
+  .btn {
+    padding: 10px 20px;
+    font-size: 14px;
+  }
+  
+  /* Form adjustments */
+  input, textarea, select {
+    font-size: 16px; /* Prevents iOS zoom */
+    padding: 12px;
+  }
+  
+  /* Enhanced touch targets */
+  button, .btn, a.btn, .nav-link, .dropdown-item {
+    min-height: 44px;
+  }
+  
+  /* Grid adjustments */
+  .grid-2-cols {
+    grid-template-columns: 1fr;
+    gap: 15px;
+  }
+  
+  /* Column reverse for specific layouts */
+  .column-reverse-mobile {
+    flex-direction: column-reverse;
+  }
+  
+  /* Fix floating headers */
+  .site-header {
+    padding: 10px 0;
+  }
+  
+  /* Adjust modal sizing */
+  .modal-content {
+    width: 95%;
+    max-width: 500px;
+    padding: 15px;
+  }
+}
+
+@media screen and (max-width: 576px) {
+  body {
+    font-size: 13px;
+  }
+  
+  h1, .h1 {
+    font-size: 1.8rem;
+  }
+  
+  h2, .h2 {
+    font-size: 1.5rem;
+  }
+  
+  h3, .h3 {
+    font-size: 1.3rem;
+  }
+  
+  h4, .h4 {
+    font-size: 1.1rem;
+  }
+  
+  /* Padding adjustments */
+  .section {
+    padding: 40px 0;
+  }
+  
+  .container, .page-container {
+    padding-left: 10px;
+    padding-right: 10px;
+  }
+  
+  /* Grid adjustments */
+  .grid-4-cols, .grid-3-cols, .grid-2-cols {
+    grid-template-columns: 1fr;
+    gap: 15px;
+  }
+  
+  /* Button adjustments */
+  .btn {
+    padding: 8px 16px;
+    font-size: 13px;
+  }
+  
+  /* Card adjustments */
+  .card {
+    padding: 15px;
+  }
+  
+  /* Fix for cards in small screens */
+  .card-body {
+    padding: 10px;
+  }
+  
+  /* Adjust spacing */
+  .mt-5, .my-5 {
+    margin-top: 2rem !important;
+  }
+  
+  .mb-5, .my-5 {
+    margin-bottom: 2rem !important;
+  }
+  
+  /* Improved mobile spacing */
+  p {
+    margin-bottom: 1rem;
+  }
+}
+
+/* iOS-specific adjustments */
+@supports (-webkit-touch-callout: none) {
+  .page-container {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+  
+  .site-header {
+    padding-top: env(safe-area-inset-top);
+  }
+  
+  .fixed-bottom {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+}
+
+/* Make all flex containers responsive by default */
+.flex-container {
+  display: flex;
+  flex-wrap: wrap;
+}
+
+/* Responsive flex direction */
+@media screen and (max-width: 768px) {
+  .flex-column-mobile {
+    flex-direction: column;
+  }
+}
+
+/* Make all product grids responsive */
+.product-grid {
+  display: grid;
+  gap: 20px;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+}
+
+@media screen and (max-width: 576px) {
+  .product-grid {
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 10px;
+  }
+} 
