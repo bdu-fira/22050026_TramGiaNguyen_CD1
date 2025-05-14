@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Box, Typography, Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Button, IconButton, Dialog, DialogActions, DialogContent, DialogTitle, TextField, Link, Chip, Badge, Tooltip, CircularProgress } from '@mui/material';
+import { Box, Typography, Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Button, IconButton, Dialog, DialogActions, DialogContent, DialogTitle, TextField, Link, Chip, Badge, Tooltip, CircularProgress, Pagination, InputAdornment } from '@mui/material';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import AddIcon from '@mui/icons-material/Add';
@@ -8,6 +8,7 @@ import PeopleIcon from '@mui/icons-material/People';
 import PersonIcon from '@mui/icons-material/Person';
 import EmailIcon from '@mui/icons-material/Email';
 import DateRangeIcon from '@mui/icons-material/DateRange';
+import SearchIcon from '@mui/icons-material/Search';
 import Layout from '../components/Layout';
 import { getCareers, createCareer, updateCareer, deleteCareer, getCareerApplications } from '../services/api';
 import { Career, CareerApplication } from '../types';
@@ -15,9 +16,17 @@ import { useSnackbar } from 'notistack';
 
 const CareerManagement: React.FC = () => {
     const [careers, setCareers] = useState<Career[]>([]);
+    const [filteredCareers, setFilteredCareers] = useState<Career[]>([]);
     const [loading, setLoading] = useState(true);
     const [openDialog, setOpenDialog] = useState(false);
     const [editingCareer, setEditingCareer] = useState<Career | null>(null);
+    
+    // Pagination and search states
+    const [page, setPage] = useState(1);
+    const [rowsPerPage] = useState(15);
+    const [totalPages, setTotalPages] = useState(1);
+    const [searchQuery, setSearchQuery] = useState('');
+    
     const [formData, setFormData] = useState({
         title: '',
         description: '',
@@ -34,11 +43,26 @@ const CareerManagement: React.FC = () => {
         fetchCareers();
     }, []);
 
+    useEffect(() => {
+        // Filter careers based on search query
+        const filtered = careers.filter(career => 
+            career.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            career.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            (career.requirements && career.requirements.toLowerCase().includes(searchQuery.toLowerCase()))
+        );
+        
+        setFilteredCareers(filtered);
+        setTotalPages(Math.ceil(filtered.length / rowsPerPage));
+        setPage(1); // Reset to first page on new search
+    }, [searchQuery, careers, rowsPerPage]);
+
     const fetchCareers = async () => {
         try {
             setLoading(true);
             const response = await getCareers();
             setCareers(response.data);
+            setFilteredCareers(response.data);
+            setTotalPages(Math.ceil(response.data.length / rowsPerPage));
         } catch (error) {
             console.error('Không thể lấy dữ liệu tuyển dụng:', error);
             enqueueSnackbar('Không thể lấy danh sách tuyển dụng', { variant: 'error' });
@@ -180,6 +204,22 @@ const CareerManagement: React.FC = () => {
             return dateString;
         }
     };
+    
+    // Handlers for pagination and search
+    const handlePageChange = (event: React.ChangeEvent<unknown>, value: number) => {
+        setPage(value);
+    };
+    
+    const handleSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+        setSearchQuery(event.target.value);
+    };
+    
+    // Get current page items
+    const getCurrentItems = () => {
+        const startIndex = (page - 1) * rowsPerPage;
+        const endIndex = startIndex + rowsPerPage;
+        return filteredCareers.slice(startIndex, endIndex);
+    };
 
     return (
         <Layout>
@@ -193,6 +233,23 @@ const CareerManagement: React.FC = () => {
                     >
                         Thêm Vị trí Tuyển dụng
                     </Button>
+                </Box>
+
+                <Box sx={{ mb: 3 }}>
+                    <TextField
+                        fullWidth
+                        placeholder="Tìm kiếm theo tiêu đề, mô tả hoặc yêu cầu..."
+                        variant="outlined"
+                        value={searchQuery}
+                        onChange={handleSearchChange}
+                        InputProps={{
+                            startAdornment: (
+                                <InputAdornment position="start">
+                                    <SearchIcon />
+                                </InputAdornment>
+                            ),
+                        }}
+                    />
                 </Box>
 
                 <TableContainer component={Paper}>
@@ -213,12 +270,12 @@ const CareerManagement: React.FC = () => {
                                 <TableRow>
                                     <TableCell colSpan={7} align="center">Đang tải...</TableCell>
                                 </TableRow>
-                            ) : careers.length === 0 ? (
+                            ) : getCurrentItems().length === 0 ? (
                                 <TableRow>
                                     <TableCell colSpan={7} align="center">Không có dữ liệu</TableCell>
                                 </TableRow>
                             ) : (
-                                careers.map((career) => (
+                                getCurrentItems().map((career) => (
                                     <TableRow key={career.job_id}>
                                         <TableCell>{career.job_id}</TableCell>
                                         <TableCell>{career.title}</TableCell>
@@ -260,6 +317,19 @@ const CareerManagement: React.FC = () => {
                         </TableBody>
                     </Table>
                 </TableContainer>
+                
+                {!loading && filteredCareers.length > 0 && (
+                    <Box sx={{ display: 'flex', justifyContent: 'center', mt: 3 }}>
+                        <Pagination 
+                            count={totalPages} 
+                            page={page} 
+                            onChange={handlePageChange} 
+                            color="primary" 
+                            showFirstButton 
+                            showLastButton
+                        />
+                    </Box>
+                )}
 
                 {/* Dialog Thêm/Sửa Vị trí Tuyển dụng */}
                 <Dialog open={openDialog} onClose={handleCloseDialog} maxWidth="md" fullWidth>

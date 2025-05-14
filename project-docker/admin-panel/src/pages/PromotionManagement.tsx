@@ -2,33 +2,33 @@ import React, { useState, useEffect } from 'react';
 import { 
     Box, Typography, Paper, Table, TableBody, TableCell, TableContainer, TableHead, 
     TableRow, Button, IconButton, Dialog, DialogActions, DialogContent, DialogTitle, 
-    TextField, MenuItem, Select, FormControl, InputLabel, Grid, Chip, Avatar, 
+    TextField, MenuItem, Select, FormControl, InputLabel, Chip, Avatar, 
     FormHelperText, CircularProgress, InputAdornment, Tooltip, Tab, Tabs, SelectChangeEvent,
-    FormLabel, FormGroup, Checkbox, FormControlLabel, ListItemText
+    List, ListItem, ListItemText, Divider, Pagination
 } from '@mui/material';
+import { styled } from '@mui/material/styles';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import AddIcon from '@mui/icons-material/Add';
-import PercentIcon from '@mui/icons-material/Percent';
-import DateRangeIcon from '@mui/icons-material/DateRange';
-import CategoryIcon from '@mui/icons-material/Category';
-import InventoryIcon from '@mui/icons-material/Inventory';
 import ImageIcon from '@mui/icons-material/Image';
 import CloudUploadIcon from '@mui/icons-material/CloudUpload';
-import PhotoIcon from '@mui/icons-material/Photo';
+import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
+import DescriptionIcon from '@mui/icons-material/Description';
+import LocalOfferIcon from '@mui/icons-material/LocalOffer';
+import PercentIcon from '@mui/icons-material/Percent';
+import SearchIcon from '@mui/icons-material/Search';
 import Layout from '../components/Layout';
 import { 
-    getPromotions, createPromotion, updatePromotion, deletePromotion,
-    getCategories, getProducts, getPromotionProducts, getPromotionCategories
+    getProducts, createProduct, updateProduct, deleteProduct, getCategories,
+    getProductPromotions, getProductDiscountedPrice, isPromotionActive
 } from '../services/api';
-import { Promotion, Category, Product } from '../types';
+import { Product, Category, ProductImage, ProductDetail, Promotion } from '../types';
 import { useSnackbar } from 'notistack';
-import { styled } from '@mui/material/styles';
-import { useLocation } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 
 // Cloudinary configuration
-const CLOUDINARY_UPLOAD_PRESET = 'gamine_preset';
-const CLOUDINARY_CLOUD_NAME = 'dlexb1dx9'; 
+const CLOUDINARY_UPLOAD_PRESET = 'gamine_preset'; // Preset cho ứng dụng của bạn - cần tạo trong Cloudinary dashboard
+const CLOUDINARY_CLOUD_NAME = 'dlexb1dx9'; // Cloud name miễn phí của Cloudinary
 const CLOUDINARY_UPLOAD_URL = `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/image/upload`;
 
 // Tạo các styled components thay thế cho Grid
@@ -36,13 +36,17 @@ const GridContainer = styled('div')(({ theme }) => ({
     display: 'flex',
     flexWrap: 'wrap',
     width: '100%',
-    margin: '-8px',
+    margin: '-8px', // Bù lại padding của GridItem
 }));
 
-const GridItemHalf = styled('div')(({ theme }) => ({
+const GridItem = styled('div')(({ theme }) => ({
     padding: '8px',
     boxSizing: 'border-box',
     flex: '0 0 auto',
+}));
+
+// GridItem với kích thước 6/12 cho màn hình trung bình trở lên, 12/12 cho màn hình nhỏ
+const GridItemHalf = styled(GridItem)(({ theme }) => ({
     width: '100%',
     [theme.breakpoints.up('sm')]: {
         width: '50%',
@@ -62,8 +66,8 @@ function TabPanel(props: TabPanelProps) {
         <div
             role="tabpanel"
             hidden={value !== index}
-            id={`promotion-tabpanel-${index}`}
-            aria-labelledby={`promotion-tab-${index}`}
+            id={`simple-tabpanel-${index}`}
+            aria-labelledby={`simple-tab-${index}`}
             {...other}
         >
             {value === index && (
@@ -80,125 +84,116 @@ const formatDate = (dateString: string) => {
     return date.toLocaleString('vi-VN');
 };
 
-// Format list of items for display in the table
-const formatItemsList = (items: string[]) => {
-    if (!items.length) return "Không có";
-    if (items.length <= 2) return items.join(", ");
-    return `${items[0]}, ${items[1]} và ${items.length - 2} khác`;
-};
-
-const PromotionManagement: React.FC = () => {
-    const location = useLocation();
-    const { selectedProductId, selectedCategoryId } = location.state || {};
-    
-    const [promotions, setPromotions] = useState<Promotion[]>([]);
-    const [promotionDetails, setPromotionDetails] = useState<{[key: number]: {products: string[], categories: string[]}}>({}); 
-    const [categories, setCategories] = useState<Category[]>([]);
+const ProductManagement: React.FC = () => {
     const [products, setProducts] = useState<Product[]>([]);
+    const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
+    const [categories, setCategories] = useState<Category[]>([]);
     const [loading, setLoading] = useState(true);
     const [openDialog, setOpenDialog] = useState(false);
-    const [editingPromotion, setEditingPromotion] = useState<Promotion | null>(null);
+    const [editingProduct, setEditingProduct] = useState<Product | null>(null);
     const [tabValue, setTabValue] = useState(0);
+    const [uploadingImage, setUploadingImage] = useState(false);
+    
+    // Pagination and search states
+    const [page, setPage] = useState(1);
+    const [rowsPerPage] = useState(15);
+    const [totalPages, setTotalPages] = useState(1);
+    const [searchQuery, setSearchQuery] = useState('');
+    
+    // Promotion dialog
+    const [openPromotionDialog, setOpenPromotionDialog] = useState(false);
+    const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+    const [productPromotions, setProductPromotions] = useState<Promotion[]>([]);
+    const [loadingPromotions, setLoadingPromotions] = useState(false);
+    const [promoTabValue, setPromoTabValue] = useState(0);
     
     const [formData, setFormData] = useState({
-        title: '',
+        name: '',
         description: '',
-        discount_percentage: '',
-        start_date: new Date().toISOString().slice(0, 16),
-        end_date: new Date(new Date().setMonth(new Date().getMonth() + 1)).toISOString().slice(0, 16),
-        img_banner: '',
+        price: '',
+        stock_quantity: '',
+        category: '',
+        specification: ''
     });
     
-    const [selectedProductIds, setSelectedProductIds] = useState<number[]>([]);
-    const [selectedCategoryIds, setSelectedCategoryIds] = useState<number[]>([]);
-    
+    const [images, setImages] = useState<ProductImage[]>([]);
     const { enqueueSnackbar } = useSnackbar();
-
-    const [uploadingBanner, setUploadingBanner] = useState(false);
+    const navigate = useNavigate();
 
     useEffect(() => {
-        // Tải danh mục và sản phẩm trước khi tải khuyến mãi
-        const loadInitialData = async () => {
-            try {
-                await fetchCategories();
-                await fetchProducts();
-                await fetchPromotions();
-            } catch (error) {
-                console.error('Lỗi khi tải dữ liệu ban đầu:', error);
-            } finally {
-                setLoading(false);
-            }
-        };
-        
-        loadInitialData();
-        
-        // Nếu được mở từ trang sản phẩm hoặc danh mục, tự động mở dialog thêm mới
-        if (selectedProductId || selectedCategoryId) {
-            handleOpenDialog();
-        }
+        fetchProducts();
+        fetchCategories();
     }, []);
-    
-    useEffect(() => {
-        // Nếu được mở từ trang sản phẩm, tự động chọn sản phẩm đó
-        if (selectedProductId && products.length > 0) {
-            setSelectedProductIds([selectedProductId]);
-            setTabValue(1); // Chuyển đến tab sản phẩm
-        }
-        
-        // Nếu được mở từ trang danh mục, tự động chọn danh mục đó
-        if (selectedCategoryId && categories.length > 0) {
-            setSelectedCategoryIds([selectedCategoryId]);
-            setTabValue(2); // Chuyển đến tab danh mục
-        }
-    }, [selectedProductId, selectedCategoryId, products, categories]);
 
-    const fetchPromotions = async () => {
+    useEffect(() => {
+        // Filter products based on search query
+        const filtered = products.filter(product => 
+            product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            (product.description && product.description.toLowerCase().includes(searchQuery.toLowerCase())) ||
+            product.category_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            product.product_id.toString().includes(searchQuery)
+        );
+        
+        setFilteredProducts(filtered);
+        setTotalPages(Math.ceil(filtered.length / rowsPerPage));
+        setPage(1); // Reset to first page on new search
+    }, [searchQuery, products, rowsPerPage]);
+
+    const fetchProducts = async () => {
         try {
             setLoading(true);
-            const response = await getPromotions();
-            setPromotions(response.data);
+            const response = await getProducts();
+            // Lấy danh sách sản phẩm cơ bản
+            const productsList = response.data;
             
-            // Đảm bảo đã có dữ liệu sản phẩm và danh mục
-            const productsData = products.length ? products : await fetchProducts();
-            const categoriesData = categories.length ? categories : await fetchCategories();
+            // Lấy thông tin khuyến mãi và tính giá cho từng sản phẩm
+            const productsWithDiscounts = await Promise.all(
+                productsList.map(async (product: Product) => {
+                    try {
+                        // Lấy thông tin khuyến mãi cho sản phẩm
+                        const promotionsResponse = await getProductPromotions(product.product_id);
+                        if (promotionsResponse.data && Array.isArray(promotionsResponse.data)) {
+                            // Lọc ra các khuyến mãi đang active
+                            const activePromotions = promotionsResponse.data.filter(promo => isPromotionActive(promo));
+                            
+                            // Nếu có khuyến mãi active, tìm khuyến mãi có discount cao nhất
+                            if (activePromotions.length > 0) {
+                                const maxDiscount = Math.max(...activePromotions.map(promo => promo.discount_percentage));
+                                
+                                // Tính giá khuyến mãi dựa trên phần trăm giảm giá
+                                const discountAmount = (product.price * maxDiscount) / 100;
+                                const discountedPrice = product.price - discountAmount;
+                                
+                                // Cập nhật thông tin sản phẩm
+                                return {
+                                    ...product,
+                                    discounted_price: Number(discountedPrice.toFixed(2)),
+                                    discount_percentage: maxDiscount,
+                                    has_active_promotion: true
+                                };
+                            }
+                        }
+                        
+                        // Trường hợp không có khuyến mãi
+                        return {
+                            ...product,
+                            discounted_price: product.price,
+                            discount_percentage: 0,
+                            has_active_promotion: false
+                        };
+                    } catch (error) {
+                        console.error(`Lỗi khi lấy thông tin khuyến mãi cho sản phẩm ${product.product_id}:`, error);
+                        return product;
+                    }
+                })
+            );
             
-            // Lấy thông tin chi tiết về sản phẩm và danh mục cho mỗi khuyến mãi
-            const details: {[key: number]: {products: string[], categories: string[]}} = {};
-            
-            for (const promotion of response.data) {
-                try {
-                    const productResponse = await getPromotionProducts(promotion.promotion_id);
-                    const categoryResponse = await getPromotionCategories(promotion.promotion_id);
-                    
-                    // Lấy tên sản phẩm từ IDs
-                    const productNames = productResponse.data?.map((item: any) => {
-                        const product = productsData.find((p: any) => p.product_id === item.product_id);
-                        return product ? product.name : `Sản phẩm #${item.product_id}`;
-                    }) || [];
-                    
-                    // Lấy tên danh mục từ IDs
-                    const categoryNames = categoryResponse.data?.map((item: any) => {
-                        const category = categoriesData.find((c: any) => c.category_id === item.category_id);
-                        return category ? category.name : `Danh mục #${item.category_id}`;
-                    }) || [];
-                    
-                    details[promotion.promotion_id] = {
-                        products: productNames,
-                        categories: categoryNames
-                    };
-                } catch (error) {
-                    console.error(`Lỗi khi lấy chi tiết cho khuyến mãi ${promotion.promotion_id}:`, error);
-                    details[promotion.promotion_id] = {
-                        products: [],
-                        categories: []
-                    };
-                }
-            }
-            
-            setPromotionDetails(details);
+            setProducts(productsWithDiscounts);
+            setFilteredProducts(productsWithDiscounts);
+            setTotalPages(Math.ceil(productsWithDiscounts.length / rowsPerPage));
         } catch (error) {
-            console.error('Không thể lấy dữ liệu khuyến mãi:', error);
-            enqueueSnackbar('Không thể lấy danh sách khuyến mãi', { variant: 'error' });
+            console.error('Không thể lấy dữ liệu sản phẩm:', error);
+            enqueueSnackbar('Không thể lấy danh sách sản phẩm', { variant: 'error' });
         } finally {
             setLoading(false);
         }
@@ -208,82 +203,44 @@ const PromotionManagement: React.FC = () => {
         try {
             const response = await getCategories();
             setCategories(response.data);
-            return response.data;
         } catch (error) {
             console.error('Không thể lấy dữ liệu danh mục:', error);
             enqueueSnackbar('Không thể lấy danh sách danh mục', { variant: 'error' });
-            return [];
         }
     };
 
-    const fetchProducts = async () => {
-        try {
-            const response = await getProducts();
-            setProducts(response.data);
-            return response.data;
-        } catch (error) {
-            console.error('Không thể lấy dữ liệu sản phẩm:', error);
-            enqueueSnackbar('Không thể lấy danh sách sản phẩm', { variant: 'error' });
-            return [];
-        }
-    };
-
-    const handleOpenDialog = async (promotion?: Promotion) => {
-        if (promotion) {
-            setEditingPromotion(promotion);
+    const handleOpenDialog = (product?: Product) => {
+        if (product) {
+            setEditingProduct(product);
             setFormData({
-                title: promotion.title,
-                description: promotion.description || '',
-                discount_percentage: promotion.discount_percentage.toString(),
-                start_date: new Date(promotion.start_date).toISOString().slice(0, 16),
-                end_date: new Date(promotion.end_date).toISOString().slice(0, 16),
-                img_banner: promotion.img_banner || '',
+                name: product.name,
+                description: product.description || '',
+                price: product.price.toString(),
+                stock_quantity: product.stock_quantity.toString(),
+                category: product.category.toString(),
+                specification: product.detail?.specification || ''
             });
-            
-            try {
-                // Lấy danh sách sản phẩm được áp dụng cho khuyến mãi này
-                const productResponse = await getPromotionProducts(promotion.promotion_id);
-                if (productResponse.data && Array.isArray(productResponse.data)) {
-                    const productIds = productResponse.data.map(item => item.product_id);
-                    setSelectedProductIds(productIds);
-                } else {
-                    setSelectedProductIds([]);
-                }
-                
-                // Lấy danh sách danh mục được áp dụng cho khuyến mãi này
-                const categoryResponse = await getPromotionCategories(promotion.promotion_id);
-                if (categoryResponse.data && Array.isArray(categoryResponse.data)) {
-                    const categoryIds = categoryResponse.data.map(item => item.category_id);
-                    setSelectedCategoryIds(categoryIds);
-                } else {
-                    setSelectedCategoryIds([]);
-                }
-            } catch (error) {
-                console.error('Lỗi khi lấy thông tin sản phẩm hoặc danh mục áp dụng:', error);
-                enqueueSnackbar('Không thể lấy thông tin sản phẩm hoặc danh mục áp dụng', { variant: 'error' });
-                setSelectedProductIds([]);
-                setSelectedCategoryIds([]);
-            }
+            setImages(product.images || []);
         } else {
-            setEditingPromotion(null);
+            setEditingProduct(null);
             setFormData({
-                title: '',
+                name: '',
                 description: '',
-                discount_percentage: '',
-                start_date: new Date().toISOString().slice(0, 16),
-                end_date: new Date(new Date().setMonth(new Date().getMonth() + 1)).toISOString().slice(0, 16),
-                img_banner: '',
+                price: '',
+                stock_quantity: '',
+                category: '',
+                specification: ''
             });
-            setSelectedProductIds([]);
-            setSelectedCategoryIds([]);
+            setImages([]);
         }
         setOpenDialog(true);
-        setTabValue(0);
+        setTabValue(0); // Reset to first tab when opening dialog
     };
 
     const handleCloseDialog = () => {
         setOpenDialog(false);
-        setEditingPromotion(null);
+        setEditingProduct(null);
+        setImages([]);
     };
 
     const handleTextFieldChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -302,47 +259,83 @@ const PromotionManagement: React.FC = () => {
         }));
     };
 
-    const handleDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const { name, value } = e.target;
-        setFormData(prev => ({
-            ...prev,
-            [name]: value
-        }));
-    };
-
     const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
         setTabValue(newValue);
     };
 
-    const handleProductSelectionChange = (event: SelectChangeEvent<number[]>) => {
-        const { value } = event.target;
-        setSelectedProductIds(typeof value === 'string' ? [] : value as number[]);
+    const handleUploadImage = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (!e.target.files || e.target.files.length === 0) return;
+        
+        const file = e.target.files[0];
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('upload_preset', CLOUDINARY_UPLOAD_PRESET);
+        
+        try {
+            setUploadingImage(true);
+            const response = await fetch(CLOUDINARY_UPLOAD_URL, {
+                method: 'POST',
+                body: formData
+            });
+            
+            const data = await response.json();
+            
+            if (data.secure_url) {
+                const newImage: ProductImage = {
+                    image_id: Date.now(), // Temporary ID for UI purposes
+                    image_url: data.secure_url,
+                    is_primary: images.length === 0 // First image is primary by default
+                };
+                
+                setImages(prev => [...prev, newImage]);
+                enqueueSnackbar('Tải hình ảnh lên thành công!', { variant: 'success' });
+            }
+        } catch (error) {
+            console.error('Lỗi khi tải hình ảnh:', error);
+            enqueueSnackbar('Không thể tải hình ảnh lên', { variant: 'error' });
+        } finally {
+            setUploadingImage(false);
+        }
     };
 
-    const handleCategorySelectionChange = (event: SelectChangeEvent<number[]>) => {
-        const { value } = event.target;
-        setSelectedCategoryIds(typeof value === 'string' ? [] : value as number[]);
+    const handleRemoveImage = (imageId: number) => {
+        setImages(prev => {
+            const filtered = prev.filter(img => img.image_id !== imageId);
+            // If we removed the primary image and have other images, make the first one primary
+            if (filtered.length > 0 && !filtered.some(img => img.is_primary)) {
+                filtered[0].is_primary = true;
+            }
+            return filtered;
+        });
+    };
+
+    const handleSetPrimaryImage = (imageId: number) => {
+        setImages(prev => 
+            prev.map(img => ({
+                ...img,
+                is_primary: img.image_id === imageId
+            }))
+        );
     };
 
     const validateForm = () => {
-        if (!formData.title.trim()) {
-            enqueueSnackbar('Vui lòng nhập tiêu đề khuyến mãi', { variant: 'error' });
+        if (!formData.name.trim()) {
+            enqueueSnackbar('Vui lòng nhập tên sản phẩm', { variant: 'error' });
             return false;
         }
         
-        if (!formData.discount_percentage || isNaN(Number(formData.discount_percentage)) || 
-            Number(formData.discount_percentage) <= 0 || Number(formData.discount_percentage) > 100) {
-            enqueueSnackbar('Vui lòng nhập phần trăm giảm giá hợp lệ (1-100)', { variant: 'error' });
+        if (!formData.price || isNaN(Number(formData.price)) || Number(formData.price) <= 0) {
+            enqueueSnackbar('Vui lòng nhập giá sản phẩm hợp lệ', { variant: 'error' });
             return false;
         }
         
-        if (!formData.start_date || !formData.end_date) {
-            enqueueSnackbar('Vui lòng chọn ngày bắt đầu và kết thúc', { variant: 'error' });
+        if (!formData.stock_quantity || isNaN(Number(formData.stock_quantity)) || Number(formData.stock_quantity) < 0) {
+            enqueueSnackbar('Vui lòng nhập số lượng tồn kho hợp lệ', { variant: 'error' });
             return false;
         }
         
-        if (new Date(formData.start_date) >= new Date(formData.end_date)) {
-            enqueueSnackbar('Ngày kết thúc phải sau ngày bắt đầu', { variant: 'error' });
+        if (!formData.category) {
+            enqueueSnackbar('Vui lòng chọn danh mục sản phẩm', { variant: 'error' });
             return false;
         }
         
@@ -353,97 +346,144 @@ const PromotionManagement: React.FC = () => {
         if (!validateForm()) return;
         
         try {
-            const promotionData: any = {
-                title: formData.title,
+            const productData: any = {
+                name: formData.name,
                 description: formData.description || null,
-                discount_percentage: Number(formData.discount_percentage),
-                start_date: new Date(formData.start_date).toISOString(),
-                end_date: new Date(formData.end_date).toISOString(),
-                img_banner: formData.img_banner || null,
-                product_ids: selectedProductIds,
-                category_ids: selectedCategoryIds
+                price: Number(formData.price),
+                stock_quantity: Number(formData.stock_quantity),
+                category: Number(formData.category),
+                images: images.map(img => ({
+                    image_url: img.image_url,
+                    is_primary: img.is_primary
+                })),
+                detail: {
+                    specification: formData.specification || null
+                }
             };
             
-            if (editingPromotion) {
-                // Cập nhật khuyến mãi
-                await updatePromotion(editingPromotion.promotion_id, promotionData);
-                enqueueSnackbar('Cập nhật khuyến mãi thành công!', { variant: 'success' });
+            if (editingProduct) {
+                // Cập nhật sản phẩm
+                await updateProduct(editingProduct.product_id, productData);
+                enqueueSnackbar('Cập nhật sản phẩm thành công!', { variant: 'success' });
             } else {
-                // Tạo khuyến mãi mới
-                await createPromotion(promotionData);
-                enqueueSnackbar('Tạo khuyến mãi mới thành công!', { variant: 'success' });
+                // Tạo sản phẩm mới
+                await createProduct(productData);
+                enqueueSnackbar('Tạo sản phẩm mới thành công!', { variant: 'success' });
             }
             
             handleCloseDialog();
-            fetchPromotions();
+            fetchProducts();
         } catch (error: any) {
-            console.error('Lỗi khi lưu khuyến mãi:', error);
+            console.error('Lỗi khi lưu sản phẩm:', error);
             if (error.response) {
                 console.error('Lỗi response:', error.response.data);
                 enqueueSnackbar(`Lỗi: ${JSON.stringify(error.response.data)}`, { variant: 'error' });
             } else {
-                enqueueSnackbar('Lỗi khi lưu dữ liệu khuyến mãi', { variant: 'error' });
+                enqueueSnackbar('Lỗi khi lưu dữ liệu sản phẩm', { variant: 'error' });
             }
         }
     };
 
     const handleDelete = async (id: number) => {
-        if (window.confirm('Bạn có chắc chắn muốn xóa khuyến mãi này?')) {
+        if (window.confirm('Bạn có chắc chắn muốn xóa sản phẩm này?')) {
             try {
-                await deletePromotion(id);
-                enqueueSnackbar('Xóa khuyến mãi thành công!', { variant: 'success' });
-                fetchPromotions();
+                await deleteProduct(id);
+                enqueueSnackbar('Xóa sản phẩm thành công!', { variant: 'success' });
+                fetchProducts();
             } catch (error) {
-                console.error('Lỗi khi xóa khuyến mãi:', error);
-                enqueueSnackbar('Không thể xóa khuyến mãi', { variant: 'error' });
+                console.error('Lỗi khi xóa sản phẩm:', error);
+                enqueueSnackbar('Không thể xóa sản phẩm', { variant: 'error' });
             }
         }
     };
 
-    const handleUploadBanner = async (e: React.ChangeEvent<HTMLInputElement>) => {
-        if (!e.target.files || e.target.files.length === 0) return;
-        
-        const file = e.target.files[0];
-        const formData = new FormData();
-        formData.append('file', file);
-        formData.append('upload_preset', CLOUDINARY_UPLOAD_PRESET);
-        
+    const formatPrice = (price: number) => {
+        return new Intl.NumberFormat('vi-VN', {
+            style: 'currency',
+            currency: 'VND'
+        }).format(price);
+    };
+
+    const handleOpenPromotionDialog = async (product: Product) => {
+        setSelectedProduct(product);
+        setOpenPromotionDialog(true);
+        setPromoTabValue(0);
+        await fetchProductPromotions(product.product_id);
+    };
+    
+    const handleClosePromotionDialog = () => {
+        setOpenPromotionDialog(false);
+        setSelectedProduct(null);
+        setProductPromotions([]);
+    };
+    
+    const fetchProductPromotions = async (productId: number) => {
         try {
-            setUploadingBanner(true);
-            const response = await fetch(CLOUDINARY_UPLOAD_URL, {
-                method: 'POST',
-                body: formData
-            });
-            
-            const data = await response.json();
-            
-            if (data.secure_url) {
-                setFormData(prev => ({
-                    ...prev,
-                    img_banner: data.secure_url
-                }));
-                enqueueSnackbar('Tải ảnh banner lên thành công!', { variant: 'success' });
-            }
+            setLoadingPromotions(true);
+            const response = await getProductPromotions(productId);
+            setProductPromotions(response.data);
         } catch (error) {
-            console.error('Lỗi khi tải ảnh banner:', error);
-            enqueueSnackbar('Không thể tải ảnh banner lên', { variant: 'error' });
+            console.error('Không thể lấy danh sách khuyến mãi của sản phẩm:', error);
+            enqueueSnackbar('Không thể lấy danh sách khuyến mãi', { variant: 'error' });
         } finally {
-            setUploadingBanner(false);
+            setLoadingPromotions(false);
         }
+    };
+    
+    const handleAddPromotion = () => {
+        navigate('/promotions', { state: { selectedProductId: selectedProduct?.product_id } });
+        handleClosePromotionDialog();
+    };
+    
+    const handlePromoTabChange = (event: React.SyntheticEvent, newValue: number) => {
+        setPromoTabValue(newValue);
+    };
+
+    // Add new handlers for pagination and search
+    const handlePageChange = (event: React.ChangeEvent<unknown>, value: number) => {
+        setPage(value);
+    };
+    
+    const handleSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+        setSearchQuery(event.target.value);
+    };
+    
+    // Get current page items
+    const getCurrentItems = () => {
+        const startIndex = (page - 1) * rowsPerPage;
+        const endIndex = startIndex + rowsPerPage;
+        return filteredProducts.slice(startIndex, endIndex);
     };
 
     return (
         <Layout>
             <Box sx={{ p: 3 }}>
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-                    <Typography variant="h4">Quản lý Khuyến mãi</Typography>
+                    <Typography variant="h4">Quản lý Sản phẩm</Typography>
                     <Button 
                         variant="contained" 
                         startIcon={<AddIcon />} 
                         onClick={() => handleOpenDialog()}
                     >
-                        Thêm Khuyến mãi
+                        Thêm Sản phẩm
                     </Button>
+                </Box>
+
+                <Box sx={{ mb: 3 }}>
+                    <TextField
+                        fullWidth
+                        placeholder="Tìm kiếm theo tên, mô tả, danh mục hoặc ID sản phẩm..."
+                        variant="outlined"
+                        value={searchQuery}
+                        onChange={handleSearchChange}
+                        InputProps={{
+                            startAdornment: (
+                                <InputAdornment position="start">
+                                    <SearchIcon />
+                                </InputAdornment>
+                            ),
+                        }}
+                    />
                 </Box>
 
                 <TableContainer component={Paper}>
@@ -451,13 +491,13 @@ const PromotionManagement: React.FC = () => {
                         <TableHead>
                             <TableRow>
                                 <TableCell>ID</TableCell>
-                                <TableCell>Tiêu đề</TableCell>
-                                <TableCell>Phần trăm giảm giá</TableCell>
-                                <TableCell>Ngày bắt đầu</TableCell>
-                                <TableCell>Ngày kết thúc</TableCell>
-                                <TableCell>Sản phẩm áp dụng</TableCell>
-                                <TableCell>Danh mục áp dụng</TableCell>
-                                <TableCell>Trạng thái</TableCell>
+                                <TableCell>Hình ảnh</TableCell>
+                                <TableCell>Tên sản phẩm</TableCell>
+                                <TableCell>Danh mục</TableCell>
+                                <TableCell>Giá</TableCell>
+                                <TableCell>Tồn kho</TableCell>
+                                <TableCell>Đã bán</TableCell>
+                                <TableCell>Khuyến mãi</TableCell>
                                 <TableCell align="right">Thao tác</TableCell>
                             </TableRow>
                         </TableHead>
@@ -466,82 +506,117 @@ const PromotionManagement: React.FC = () => {
                                 <TableRow>
                                     <TableCell colSpan={9} align="center">Đang tải...</TableCell>
                                 </TableRow>
-                            ) : promotions.length === 0 ? (
+                            ) : getCurrentItems().length === 0 ? (
                                 <TableRow>
                                     <TableCell colSpan={9} align="center">Không có dữ liệu</TableCell>
                                 </TableRow>
                             ) : (
-                                promotions.map((promotion) => {
-                                    const now = new Date();
-                                    const startDate = new Date(promotion.start_date);
-                                    const endDate = new Date(promotion.end_date);
-                                    
-                                    let status = "Chưa bắt đầu";
-                                    let statusColor = "info";
-                                    
-                                    if (now >= startDate && now <= endDate) {
-                                        status = "Đang diễn ra";
-                                        statusColor = "success";
-                                    } else if (now > endDate) {
-                                        status = "Đã kết thúc";
-                                        statusColor = "error";
-                                    }
-
-                                    const detail = promotionDetails[promotion.promotion_id] || { products: [], categories: [] };
-                                    
-                                    return (
-                                        <TableRow key={promotion.promotion_id}>
-                                            <TableCell>{promotion.promotion_id}</TableCell>
-                                            <TableCell>{promotion.title}</TableCell>
-                                            <TableCell>{promotion.discount_percentage}%</TableCell>
-                                            <TableCell>{formatDate(promotion.start_date)}</TableCell>
-                                            <TableCell>{formatDate(promotion.end_date)}</TableCell>
-                                            <TableCell>
-                                                <Tooltip title={detail.products.join(", ") || "Không có"}>
-                                                    <span>{formatItemsList(detail.products)}</span>
-                                                </Tooltip>
-                                            </TableCell>
-                                            <TableCell>
-                                                <Tooltip title={detail.categories.join(", ") || "Không có"}>
-                                                    <span>{formatItemsList(detail.categories)}</span>
-                                                </Tooltip>
-                                            </TableCell>
-                                            <TableCell>
-                                                <Chip 
-                                                    label={status} 
-                                                    color={statusColor as any}
-                                                    size="small"
+                                getCurrentItems().map((product) => (
+                                    <TableRow key={product.product_id}>
+                                        <TableCell>{product.product_id}</TableCell>
+                                        <TableCell>
+                                            {product.images && product.images.length > 0 ? (
+                                                <Avatar 
+                                                    src={product.images.find(img => img.is_primary)?.image_url || product.images[0].image_url} 
+                                                    alt={product.name}
+                                                    sx={{ width: 50, height: 50 }}
+                                                    variant="rounded"
                                                 />
-                                            </TableCell>
-                                            <TableCell align="right">
-                                                <IconButton onClick={() => handleOpenDialog(promotion)}>
-                                                    <EditIcon />
+                                            ) : (
+                                                <Avatar 
+                                                    sx={{ width: 50, height: 50, bgcolor: 'grey.300' }}
+                                                    variant="rounded"
+                                                >
+                                                    <ImageIcon />
+                                                </Avatar>
+                                            )}
+                                        </TableCell>
+                                        <TableCell>{product.name}</TableCell>
+                                        <TableCell>{product.category_name}</TableCell>
+                                        <TableCell>
+                                            {product.has_active_promotion && product.discounted_price !== product.price ? (
+                                                <Box>
+                                                    <Typography
+                                                        variant="body2"
+                                                        sx={{
+                                                            textDecoration: 'line-through',
+                                                            color: 'text.secondary'
+                                                        }}
+                                                    >
+                                                        {formatPrice(product.price)}
+                                                    </Typography>
+                                                    <Typography
+                                                        variant="body1"
+                                                        sx={{ color: 'error.main', fontWeight: 'bold' }}
+                                                    >
+                                                        {formatPrice(product.discounted_price ?? product.price)}
+                                                        {product.discount_percentage && (
+                                                            <Typography 
+                                                                component="span" 
+                                                                sx={{ ml: 1, fontSize: '0.85rem', color: 'error.main' }}
+                                                            >
+                                                                (-{product.discount_percentage}%)
+                                                            </Typography>
+                                                        )}
+                                                    </Typography>
+                                                </Box>
+                                            ) : (
+                                                formatPrice(product.price)
+                                            )}
+                                        </TableCell>
+                                        <TableCell>{product.stock_quantity}</TableCell>
+                                        <TableCell>{product.sold_quantity}</TableCell>
+                                        <TableCell>
+                                            <Tooltip title="Xem khuyến mãi">
+                                                <IconButton 
+                                                    onClick={() => handleOpenPromotionDialog(product)}
+                                                    color={product.has_active_promotion ? "error" : "primary"}
+                                                >
+                                                    <LocalOfferIcon />
                                                 </IconButton>
-                                                <IconButton onClick={() => handleDelete(promotion.promotion_id)}>
-                                                    <DeleteIcon />
-                                                </IconButton>
-                                            </TableCell>
-                                        </TableRow>
-                                    );
-                                })
+                                            </Tooltip>
+                                        </TableCell>
+                                        <TableCell align="right">
+                                            <IconButton onClick={() => handleOpenDialog(product)}>
+                                                <EditIcon />
+                                            </IconButton>
+                                            <IconButton onClick={() => handleDelete(product.product_id)}>
+                                                <DeleteIcon />
+                                            </IconButton>
+                                        </TableCell>
+                                    </TableRow>
+                                ))
                             )}
                         </TableBody>
                     </Table>
                 </TableContainer>
+                
+                {!loading && filteredProducts.length > 0 && (
+                    <Box sx={{ display: 'flex', justifyContent: 'center', mt: 3 }}>
+                        <Pagination 
+                            count={totalPages} 
+                            page={page} 
+                            onChange={handlePageChange} 
+                            color="primary" 
+                            showFirstButton 
+                            showLastButton
+                        />
+                    </Box>
+                )}
 
-                {/* Dialog Thêm/Sửa Khuyến mãi */}
+                {/* Dialog Thêm/Sửa Sản phẩm */}
                 <Dialog 
                     open={openDialog} 
                     onClose={handleCloseDialog} 
                     maxWidth="md" 
                     fullWidth
                 >
-                    <DialogTitle>{editingPromotion ? 'Sửa Khuyến mãi' : 'Thêm Khuyến mãi Mới'}</DialogTitle>
+                    <DialogTitle>{editingProduct ? 'Sửa Sản phẩm' : 'Thêm Sản phẩm Mới'}</DialogTitle>
                     <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
-                        <Tabs value={tabValue} onChange={handleTabChange} aria-label="promotion edit tabs">
+                        <Tabs value={tabValue} onChange={handleTabChange} aria-label="product edit tabs">
                             <Tab label="Thông tin cơ bản" />
-                            <Tab label="Sản phẩm áp dụng" />
-                            <Tab label="Danh mục áp dụng" />
+                            <Tab label="Hình ảnh" />
+                            <Tab label="Thông số kỹ thuật" />
                         </Tabs>
                     </Box>
                     <DialogContent>
@@ -549,9 +624,9 @@ const PromotionManagement: React.FC = () => {
                             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 2 }}>
                                 <TextField
                                     fullWidth
-                                    label="Tiêu đề khuyến mãi"
-                                    name="title"
-                                    value={formData.title}
+                                    label="Tên sản phẩm"
+                                    name="name"
+                                    value={formData.name}
                                     onChange={handleTextFieldChange}
                                     required
                                 />
@@ -564,32 +639,17 @@ const PromotionManagement: React.FC = () => {
                                     multiline
                                     rows={4}
                                 />
-                                <TextField
-                                    fullWidth
-                                    label="Phần trăm giảm giá"
-                                    name="discount_percentage"
-                                    value={formData.discount_percentage}
-                                    onChange={handleTextFieldChange}
-                                    type="number"
-                                    InputProps={{
-                                        startAdornment: <InputAdornment position="start"><PercentIcon /></InputAdornment>,
-                                    }}
-                                    required
-                                />
                                 <GridContainer>
                                     <GridItemHalf>
                                         <TextField
                                             fullWidth
-                                            label="Ngày bắt đầu"
-                                            name="start_date"
-                                            type="datetime-local"
-                                            value={formData.start_date}
-                                            onChange={handleDateChange}
-                                            InputLabelProps={{
-                                                shrink: true,
-                                            }}
+                                            label="Giá (VNĐ)"
+                                            name="price"
+                                            value={formData.price}
+                                            onChange={handleTextFieldChange}
+                                            type="number"
                                             InputProps={{
-                                                startAdornment: <InputAdornment position="start"><DateRangeIcon /></InputAdornment>,
+                                                startAdornment: <InputAdornment position="start">₫</InputAdornment>,
                                             }}
                                             required
                                         />
@@ -597,156 +657,169 @@ const PromotionManagement: React.FC = () => {
                                     <GridItemHalf>
                                         <TextField
                                             fullWidth
-                                            label="Ngày kết thúc"
-                                            name="end_date"
-                                            type="datetime-local"
-                                            value={formData.end_date}
-                                            onChange={handleDateChange}
-                                            InputLabelProps={{
-                                                shrink: true,
-                                            }}
-                                            InputProps={{
-                                                startAdornment: <InputAdornment position="start"><DateRangeIcon /></InputAdornment>,
-                                            }}
+                                            label="Số lượng tồn kho"
+                                            name="stock_quantity"
+                                            value={formData.stock_quantity}
+                                            onChange={handleTextFieldChange}
+                                            type="number"
                                             required
                                         />
                                     </GridItemHalf>
                                 </GridContainer>
-                                <Box sx={{ mt: 2 }}>
-                                    <Typography variant="subtitle2" gutterBottom>Ảnh banner</Typography>
-                                    
-                                    {formData.img_banner ? (
-                                        <Box sx={{ position: 'relative', mb: 2 }}>
-                                            <img 
-                                                src={formData.img_banner} 
-                                                alt="Banner Preview" 
-                                                style={{ width: '100%', maxHeight: '200px', objectFit: 'contain', border: '1px solid #ddd', borderRadius: '4px' }} 
-                                            />
-                                            <IconButton 
-                                                sx={{ position: 'absolute', top: 8, right: 8, bgcolor: 'rgba(255,255,255,0.7)' }}
-                                                onClick={() => setFormData(prev => ({ ...prev, img_banner: '' }))}
-                                            >
-                                                <DeleteIcon />
-                                            </IconButton>
-                                        </Box>
-                                    ) : (
-                                        <Box 
-                                            sx={{ 
-                                                width: '100%', 
-                                                height: '120px', 
-                                                border: '1px dashed #ccc', 
-                                                borderRadius: '4px',
-                                                display: 'flex',
-                                                flexDirection: 'column',
-                                                alignItems: 'center',
-                                                justifyContent: 'center',
-                                                mb: 2,
-                                                bgcolor: 'grey.100'
-                                            }}
-                                        >
-                                            <PhotoIcon sx={{ fontSize: 40, color: 'text.secondary', mb: 1 }} />
-                                            <Typography variant="body2" color="text.secondary">Chưa có ảnh banner</Typography>
-                                        </Box>
-                                    )}
-                                    
-                                    <Button
-                                        variant="outlined"
-                                        component="label"
-                                        startIcon={uploadingBanner ? <CircularProgress size={24} /> : <CloudUploadIcon />}
-                                        disabled={uploadingBanner}
-                                        size="small"
+                                <FormControl fullWidth required>
+                                    <InputLabel id="category-select-label">Danh mục</InputLabel>
+                                    <Select
+                                        labelId="category-select-label"
+                                        value={formData.category}
+                                        label="Danh mục"
+                                        name="category"
+                                        onChange={handleSelectChange}
                                     >
-                                        {formData.img_banner ? 'Thay đổi ảnh banner' : 'Tải ảnh banner lên'}
-                                        <input
-                                            type="file"
-                                            hidden
-                                            accept="image/*"
-                                            onChange={handleUploadBanner}
-                                            disabled={uploadingBanner}
-                                        />
-                                    </Button>
-                                    <FormHelperText>
-                                        Ảnh banner sẽ được hiển thị cho khuyến mãi này
-                                    </FormHelperText>
-                                </Box>
+                                        {categories.map((category) => (
+                                            <MenuItem key={category.category_id} value={category.category_id}>
+                                                {category.name}
+                                            </MenuItem>
+                                        ))}
+                                    </Select>
+                                </FormControl>
                             </Box>
                         </TabPanel>
                         
                         <TabPanel value={tabValue} index={1}>
                             <Box sx={{ mt: 2 }}>
-                                <Typography variant="subtitle1" sx={{ mb: 2, display: 'flex', alignItems: 'center' }}>
-                                    <InventoryIcon sx={{ mr: 1 }} />
-                                    Sản phẩm áp dụng khuyến mãi
+                                <Typography variant="subtitle1" sx={{ mb: 2 }}>
+                                    Hình ảnh sản phẩm
                                 </Typography>
                                 
-                                <FormControl fullWidth>
-                                    <InputLabel id="products-select-label">Sản phẩm</InputLabel>
-                                    <Select
-                                        labelId="products-select-label"
-                                        multiple
-                                        value={selectedProductIds}
-                                        onChange={handleProductSelectionChange}
-                                        renderValue={(selected) => (
-                                            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
-                                                {selected.map((value) => {
-                                                    const product = products.find(p => p.product_id === value);
-                                                    return (
-                                                        <Chip key={value} label={product?.name || value} />
-                                                    )
-                                                })}
-                                            </Box>
-                                        )}
+                                <Box sx={{ mb: 3 }}>
+                                    <Button
+                                        variant="outlined"
+                                        component="label"
+                                        startIcon={uploadingImage ? <CircularProgress size={24} /> : <CloudUploadIcon />}
+                                        disabled={uploadingImage}
                                     >
-                                        {products.map((product) => (
-                                            <MenuItem key={product.product_id} value={product.product_id}>
-                                                <Checkbox checked={selectedProductIds.indexOf(product.product_id) > -1} />
-                                                <ListItemText primary={product.name} secondary={`${product.price.toLocaleString('vi-VN')}đ`} />
-                                            </MenuItem>
-                                        ))}
-                                    </Select>
+                                        Tải hình ảnh lên
+                                        <input
+                                            type="file"
+                                            hidden
+                                            accept="image/*"
+                                            onChange={handleUploadImage}
+                                            disabled={uploadingImage}
+                                        />
+                                    </Button>
                                     <FormHelperText>
-                                        Chọn các sản phẩm sẽ được áp dụng khuyến mãi này
+                                        Hình ảnh sẽ được tải lên Cloudinary
                                     </FormHelperText>
-                                </FormControl>
+                                </Box>
+                                
+                                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+                                    {images.map((image) => (
+                                        <Box
+                                            key={image.image_id}
+                                            sx={{
+                                                position: 'relative',
+                                                width: 150,
+                                                height: 150,
+                                                m: 1,
+                                                border: image.is_primary ? '2px solid #2196f3' : '1px solid #ddd',
+                                                borderRadius: 1,
+                                                overflow: 'hidden'
+                                            }}
+                                        >
+                                            <img
+                                                src={image.image_url}
+                                                alt="Product"
+                                                style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                                            />
+                                            <Box
+                                                sx={{
+                                                    position: 'absolute',
+                                                    bottom: 0,
+                                                    left: 0,
+                                                    right: 0,
+                                                    bgcolor: 'rgba(0,0,0,0.6)',
+                                                    display: 'flex',
+                                                    justifyContent: 'space-around',
+                                                    p: 0.5
+                                                }}
+                                            >
+                                                <Tooltip title="Đặt làm ảnh chính">
+                                                    <span>
+                                                        <IconButton
+                                                            size="small"
+                                                            onClick={() => handleSetPrimaryImage(image.image_id)}
+                                                            disabled={image.is_primary}
+                                                            sx={{ color: 'white' }}
+                                                        >
+                                                            <ImageIcon fontSize="small" />
+                                                        </IconButton>
+                                                    </span>
+                                                </Tooltip>
+                                                <Tooltip title="Xóa ảnh">
+                                                    <IconButton
+                                                        size="small"
+                                                        onClick={() => handleRemoveImage(image.image_id)}
+                                                        sx={{ color: 'white' }}
+                                                    >
+                                                        <DeleteOutlineIcon fontSize="small" />
+                                                    </IconButton>
+                                                </Tooltip>
+                                            </Box>
+                                            {image.is_primary && (
+                                                <Chip
+                                                    label="Ảnh chính"
+                                                    size="small"
+                                                    color="primary"
+                                                    sx={{
+                                                        position: 'absolute',
+                                                        top: 5,
+                                                        right: 5
+                                                    }}
+                                                />
+                                            )}
+                                        </Box>
+                                    ))}
+                                    
+                                    {images.length === 0 && (
+                                        <Box
+                                            sx={{
+                                                width: '100%',
+                                                height: 200,
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                justifyContent: 'center',
+                                                bgcolor: 'grey.100',
+                                                borderRadius: 1
+                                            }}
+                                        >
+                                            <Typography color="text.secondary" sx={{ display: 'flex', alignItems: 'center' }}>
+                                                <ImageIcon sx={{ mr: 1 }} />
+                                                Chưa có hình ảnh nào
+                                            </Typography>
+                                        </Box>
+                                    )}
+                                </Box>
                             </Box>
                         </TabPanel>
                         
                         <TabPanel value={tabValue} index={2}>
                             <Box sx={{ mt: 2 }}>
                                 <Typography variant="subtitle1" sx={{ mb: 2, display: 'flex', alignItems: 'center' }}>
-                                    <CategoryIcon sx={{ mr: 1 }} />
-                                    Danh mục áp dụng khuyến mãi
+                                    <DescriptionIcon sx={{ mr: 1 }} />
+                                    Thông số kỹ thuật sản phẩm
                                 </Typography>
                                 
-                                <FormControl fullWidth>
-                                    <InputLabel id="categories-select-label">Danh mục</InputLabel>
-                                    <Select
-                                        labelId="categories-select-label"
-                                        multiple
-                                        value={selectedCategoryIds}
-                                        onChange={handleCategorySelectionChange}
-                                        renderValue={(selected) => (
-                                            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
-                                                {selected.map((value) => {
-                                                    const category = categories.find(c => c.category_id === value);
-                                                    return (
-                                                        <Chip key={value} label={category?.name || value} />
-                                                    )
-                                                })}
-                                            </Box>
-                                        )}
-                                    >
-                                        {categories.map((category) => (
-                                            <MenuItem key={category.category_id} value={category.category_id}>
-                                                <Checkbox checked={selectedCategoryIds.indexOf(category.category_id) > -1} />
-                                                <ListItemText primary={category.name} />
-                                            </MenuItem>
-                                        ))}
-                                    </Select>
-                                    <FormHelperText>
-                                        Chọn các danh mục sẽ được áp dụng khuyến mãi này. Tất cả sản phẩm trong danh mục sẽ được giảm giá.
-                                    </FormHelperText>
-                                </FormControl>
+                                <TextField
+                                    fullWidth
+                                    label="Thông số kỹ thuật"
+                                    name="specification"
+                                    value={formData.specification}
+                                    onChange={handleTextFieldChange}
+                                    multiline
+                                    rows={10}
+                                    placeholder="Nhập thông số kỹ thuật của sản phẩm..."
+                                    helperText="Bạn có thể sử dụng định dạng Markdown"
+                                />
                             </Box>
                         </TabPanel>
                     </DialogContent>
@@ -755,9 +828,100 @@ const PromotionManagement: React.FC = () => {
                         <Button onClick={handleSubmit} variant="contained">Lưu</Button>
                     </DialogActions>
                 </Dialog>
+                
+                {/* Dialog Xem Khuyến mãi của Sản phẩm */}
+                <Dialog open={openPromotionDialog} onClose={handleClosePromotionDialog} maxWidth="md" fullWidth>
+                    <DialogTitle>
+                        Khuyến mãi cho sản phẩm: {selectedProduct?.name}
+                    </DialogTitle>
+                    <DialogContent>
+                        <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
+                            <Tabs value={promoTabValue} onChange={handlePromoTabChange}>
+                                <Tab label="Khuyến mãi đang áp dụng" />
+                            </Tabs>
+                        </Box>
+                        <TabPanel value={promoTabValue} index={0}>
+                            {loadingPromotions ? (
+                                <Box sx={{ display: 'flex', justifyContent: 'center', my: 2 }}>
+                                    <Typography>Đang tải khuyến mãi...</Typography>
+                                </Box>
+                            ) : productPromotions.length === 0 ? (
+                                <Box sx={{ my: 2 }}>
+                                    <Typography>Chưa có khuyến mãi nào cho sản phẩm này</Typography>
+                                </Box>
+                            ) : (
+                                <List>
+                                    {productPromotions.map((promotion, index) => (
+                                        <React.Fragment key={promotion.promotion_id}>
+                                            <ListItem>
+                                                <ListItemText
+                                                    primary={
+                                                        <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                                                            <PercentIcon sx={{ mr: 1, color: 'primary.main' }} />
+                                                            <Typography variant="body1">
+                                                                {promotion.title} - <strong>{promotion.discount_percentage}%</strong>
+                                                            </Typography>
+                                                        </Box>
+                                                    }
+                                                    secondary={
+                                                        <>
+                                                            <Typography variant="body2">
+                                                                {promotion.description || 'Không có mô tả'}
+                                                            </Typography>
+                                                            <Typography variant="caption">
+                                                                Thời gian: {formatDate(promotion.start_date)} - {formatDate(promotion.end_date)}
+                                                            </Typography>
+                                                        </>
+                                                    }
+                                                />
+                                                {(() => {
+                                                    const now = new Date();
+                                                    const startDate = new Date(promotion.start_date);
+                                                    const endDate = new Date(promotion.end_date);
+                                                    
+                                                    let status = "Chưa bắt đầu";
+                                                    let color = "info";
+                                                    
+                                                    if (now >= startDate && now <= endDate) {
+                                                        status = "Đang diễn ra";
+                                                        color = "success";
+                                                    } else if (now > endDate) {
+                                                        status = "Đã kết thúc";
+                                                        color = "error";
+                                                    }
+                                                    
+                                                    return (
+                                                        <Chip 
+                                                            label={status} 
+                                                            color={color as any}
+                                                            size="small" 
+                                                            sx={{ ml: 1 }}
+                                                        />
+                                                    );
+                                                })()}
+                                            </ListItem>
+                                            {index < productPromotions.length - 1 && <Divider />}
+                                        </React.Fragment>
+                                    ))}
+                                </List>
+                            )}
+                        </TabPanel>
+                    </DialogContent>
+                    <DialogActions>
+                        <Button 
+                            onClick={handleAddPromotion} 
+                            variant="contained" 
+                            color="primary" 
+                            startIcon={<AddIcon />}
+                        >
+                            Thêm khuyến mãi mới
+                        </Button>
+                        <Button onClick={handleClosePromotionDialog}>Đóng</Button>
+                    </DialogActions>
+                </Dialog>
             </Box>
         </Layout>
     );
 };
 
-export default PromotionManagement; 
+export default ProductManagement; 

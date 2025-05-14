@@ -307,6 +307,7 @@ class CareerApplications(models.Model):
         ordering = ['-created_at']
         verbose_name = "Career Application"
         verbose_name_plural = "Career Applications"
+        db_table = "career_applications"  # Chỉ định tên bảng khớp với database
     
     def __str__(self):
         return f"Application for {self.career.title}"

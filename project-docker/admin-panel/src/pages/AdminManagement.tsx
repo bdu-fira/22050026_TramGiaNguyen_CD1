@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { Box, Typography, Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Button, IconButton, Dialog, DialogActions, DialogContent, DialogTitle, TextField, FormControl, InputLabel, Select, MenuItem, SelectChangeEvent } from '@mui/material';
+import { Box, Typography, Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Button, IconButton, Dialog, DialogActions, DialogContent, DialogTitle, TextField, FormControl, InputLabel, Select, MenuItem, SelectChangeEvent, Pagination, InputAdornment } from '@mui/material';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import AddIcon from '@mui/icons-material/Add';
+import SearchIcon from '@mui/icons-material/Search';
 import Layout from '../components/Layout';
 import { getAdmins, createAdmin, updateAdmin, deleteAdmin, createPermission, deletePermission, getPermissions } from '../services/api';
 import { Admin } from '../types';
@@ -36,9 +37,17 @@ const SALE_FEATURES = [
 
 const AdminManagement: React.FC = () => {
     const [admins, setAdmins] = useState<Admin[]>([]);
+    const [filteredAdmins, setFilteredAdmins] = useState<Admin[]>([]);
     const [loading, setLoading] = useState(true);
     const [openDialog, setOpenDialog] = useState(false);
     const [editingAdmin, setEditingAdmin] = useState<Admin | null>(null);
+    
+    // Pagination and search states
+    const [page, setPage] = useState(1);
+    const [rowsPerPage] = useState(15);
+    const [totalPages, setTotalPages] = useState(1);
+    const [searchQuery, setSearchQuery] = useState('');
+    
     const [formData, setFormData] = useState({
         username: '',
         email: '',
@@ -51,11 +60,26 @@ const AdminManagement: React.FC = () => {
         fetchAdmins();
     }, []);
 
+    useEffect(() => {
+        // Filter admins based on search query
+        const filtered = admins.filter(admin => 
+            admin.username.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            admin.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            (admin.role && admin.role.toLowerCase().includes(searchQuery.toLowerCase()))
+        );
+        
+        setFilteredAdmins(filtered);
+        setTotalPages(Math.ceil(filtered.length / rowsPerPage));
+        setPage(1); // Reset to first page on new search
+    }, [searchQuery, admins, rowsPerPage]);
+
     const fetchAdmins = async () => {
         try {
             setLoading(true);
             const response = await getAdmins();
             setAdmins(response.data);
+            setFilteredAdmins(response.data);
+            setTotalPages(Math.ceil(response.data.length / rowsPerPage));
         } catch (error) {
             console.error('Không thể lấy dữ liệu admin:', error);
             enqueueSnackbar('Không thể lấy danh sách admin', { variant: 'error' });
@@ -231,6 +255,21 @@ const AdminManagement: React.FC = () => {
             }
         }
     };
+    
+    const handlePageChange = (event: React.ChangeEvent<unknown>, value: number) => {
+        setPage(value);
+    };
+    
+    const handleSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+        setSearchQuery(event.target.value);
+    };
+    
+    // Get current page items
+    const getCurrentItems = () => {
+        const startIndex = (page - 1) * rowsPerPage;
+        const endIndex = startIndex + rowsPerPage;
+        return filteredAdmins.slice(startIndex, endIndex);
+    };
 
     return (
         <Layout>
@@ -244,6 +283,23 @@ const AdminManagement: React.FC = () => {
                     >
                         Thêm Admin
                     </Button>
+                </Box>
+                
+                <Box sx={{ mb: 3 }}>
+                    <TextField
+                        fullWidth
+                        placeholder="Tìm kiếm theo tên đăng nhập, email hoặc vai trò..."
+                        variant="outlined"
+                        value={searchQuery}
+                        onChange={handleSearchChange}
+                        InputProps={{
+                            startAdornment: (
+                                <InputAdornment position="start">
+                                    <SearchIcon />
+                                </InputAdornment>
+                            ),
+                        }}
+                    />
                 </Box>
 
                 <TableContainer component={Paper}>
@@ -263,12 +319,12 @@ const AdminManagement: React.FC = () => {
                                 <TableRow>
                                     <TableCell colSpan={6} align="center">Đang tải...</TableCell>
                                 </TableRow>
-                            ) : admins.length === 0 ? (
+                            ) : getCurrentItems().length === 0 ? (
                                 <TableRow>
                                     <TableCell colSpan={6} align="center">Không có dữ liệu</TableCell>
                                 </TableRow>
                             ) : (
-                                admins.map((admin) => (
+                                getCurrentItems().map((admin) => (
                                     <TableRow key={admin.admin_id}>
                                         <TableCell>{admin.admin_id}</TableCell>
                                         <TableCell>{admin.username}</TableCell>
@@ -289,6 +345,19 @@ const AdminManagement: React.FC = () => {
                         </TableBody>
                     </Table>
                 </TableContainer>
+                
+                {!loading && filteredAdmins.length > 0 && (
+                    <Box sx={{ display: 'flex', justifyContent: 'center', mt: 3 }}>
+                        <Pagination 
+                            count={totalPages} 
+                            page={page} 
+                            onChange={handlePageChange} 
+                            color="primary" 
+                            showFirstButton 
+                            showLastButton
+                        />
+                    </Box>
+                )}
 
                 {/* Dialog Thêm/Sửa Admin */}
                 <Dialog open={openDialog} onClose={handleCloseDialog} maxWidth="sm" fullWidth>

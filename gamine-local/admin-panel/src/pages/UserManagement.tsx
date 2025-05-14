@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { Box, Typography, Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Button, IconButton, Dialog, DialogActions, DialogContent, DialogTitle, TextField, FormControl } from '@mui/material';
+import { Box, Typography, Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Button, IconButton, Dialog, DialogActions, DialogContent, DialogTitle, TextField, FormControl, Pagination, InputAdornment } from '@mui/material';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import AddIcon from '@mui/icons-material/Add';
+import SearchIcon from '@mui/icons-material/Search';
 import Layout from '../components/Layout';
 import { getUsers, createUser, updateUser, deleteUser } from '../services/api';
 import { User } from '../types';
@@ -10,9 +11,17 @@ import { useSnackbar } from 'notistack';
 
 const UserManagement: React.FC = () => {
     const [users, setUsers] = useState<User[]>([]);
+    const [filteredUsers, setFilteredUsers] = useState<User[]>([]);
     const [loading, setLoading] = useState(true);
     const [openDialog, setOpenDialog] = useState(false);
     const [editingUser, setEditingUser] = useState<User | null>(null);
+    
+    // Pagination and search states
+    const [page, setPage] = useState(1);
+    const [rowsPerPage] = useState(15);
+    const [totalPages, setTotalPages] = useState(1);
+    const [searchQuery, setSearchQuery] = useState('');
+    
     const [formData, setFormData] = useState({
         username: '',
         email: '',
@@ -26,11 +35,27 @@ const UserManagement: React.FC = () => {
         fetchUsers();
     }, []);
 
+    useEffect(() => {
+        // Filter users based on search query
+        const filtered = users.filter(user => 
+            user.username.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            user.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            (user.phone && user.phone.toLowerCase().includes(searchQuery.toLowerCase())) ||
+            (user.address && user.address.toLowerCase().includes(searchQuery.toLowerCase()))
+        );
+        
+        setFilteredUsers(filtered);
+        setTotalPages(Math.ceil(filtered.length / rowsPerPage));
+        setPage(1); // Reset to first page on new search
+    }, [searchQuery, users, rowsPerPage]);
+
     const fetchUsers = async () => {
         try {
             setLoading(true);
             const response = await getUsers();
             setUsers(response.data);
+            setFilteredUsers(response.data);
+            setTotalPages(Math.ceil(response.data.length / rowsPerPage));
         } catch (error) {
             console.error('Không thể lấy dữ liệu người dùng:', error);
             enqueueSnackbar('Không thể lấy danh sách người dùng', { variant: 'error' });
@@ -133,6 +158,22 @@ const UserManagement: React.FC = () => {
             }
         }
     };
+    
+    // Handlers for pagination and search
+    const handlePageChange = (event: React.ChangeEvent<unknown>, value: number) => {
+        setPage(value);
+    };
+    
+    const handleSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+        setSearchQuery(event.target.value);
+    };
+    
+    // Get current page items
+    const getCurrentItems = () => {
+        const startIndex = (page - 1) * rowsPerPage;
+        const endIndex = startIndex + rowsPerPage;
+        return filteredUsers.slice(startIndex, endIndex);
+    };
 
     return (
         <Layout>
@@ -146,6 +187,23 @@ const UserManagement: React.FC = () => {
                     >
                         Thêm Người dùng
                     </Button>
+                </Box>
+                
+                <Box sx={{ mb: 3 }}>
+                    <TextField
+                        fullWidth
+                        placeholder="Tìm kiếm theo tên, email, số điện thoại hoặc địa chỉ..."
+                        variant="outlined"
+                        value={searchQuery}
+                        onChange={handleSearchChange}
+                        InputProps={{
+                            startAdornment: (
+                                <InputAdornment position="start">
+                                    <SearchIcon />
+                                </InputAdornment>
+                            ),
+                        }}
+                    />
                 </Box>
 
                 <TableContainer component={Paper}>
@@ -166,12 +224,12 @@ const UserManagement: React.FC = () => {
                                 <TableRow>
                                     <TableCell colSpan={7} align="center">Đang tải...</TableCell>
                                 </TableRow>
-                            ) : users.length === 0 ? (
+                            ) : getCurrentItems().length === 0 ? (
                                 <TableRow>
                                     <TableCell colSpan={7} align="center">Không có dữ liệu</TableCell>
                                 </TableRow>
                             ) : (
-                                users.map((user) => (
+                                getCurrentItems().map((user) => (
                                     <TableRow key={user.user_id}>
                                         <TableCell>{user.user_id}</TableCell>
                                         <TableCell>{user.username}</TableCell>
@@ -193,6 +251,19 @@ const UserManagement: React.FC = () => {
                         </TableBody>
                     </Table>
                 </TableContainer>
+                
+                {!loading && filteredUsers.length > 0 && (
+                    <Box sx={{ display: 'flex', justifyContent: 'center', mt: 3 }}>
+                        <Pagination 
+                            count={totalPages} 
+                            page={page} 
+                            onChange={handlePageChange} 
+                            color="primary" 
+                            showFirstButton 
+                            showLastButton
+                        />
+                    </Box>
+                )}
 
                 {/* Dialog Thêm/Sửa Người dùng */}
                 <Dialog open={openDialog} onClose={handleCloseDialog} maxWidth="sm" fullWidth>

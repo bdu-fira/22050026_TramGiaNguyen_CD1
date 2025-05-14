@@ -4,12 +4,13 @@ import {
     TableRow, Button, IconButton, Dialog, DialogActions, DialogContent, DialogTitle, 
     TextField, MenuItem, Select, FormControl, InputLabel, Chip, Tooltip,
     Divider, List, ListItem, ListItemText, Tabs, Tab, FormHelperText,
-    SelectChangeEvent, Stack
+    SelectChangeEvent, Stack, Pagination, InputAdornment
 } from '@mui/material';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import AddIcon from '@mui/icons-material/Add';
 import ShoppingCartIcon from '@mui/icons-material/ShoppingCart';
+import SearchIcon from '@mui/icons-material/Search';
 import Layout from '../components/Layout';
 import { getOrders, getOrder, createOrder, updateOrder, deleteOrder, getProducts, getUsers, getUser } from '../services/api';
 import { Order, Product, User, OrderDetail, Payment } from '../types';
@@ -72,6 +73,7 @@ const getStatusColor = (status: string) => {
 
 const OrderManagement: React.FC = () => {
     const [orders, setOrders] = useState<Order[]>([]);
+    const [filteredOrders, setFilteredOrders] = useState<Order[]>([]);
     const [products, setProducts] = useState<Product[]>([]);
     const [users, setUsers] = useState<User[]>([]);
     const [loading, setLoading] = useState(true);
@@ -79,6 +81,12 @@ const OrderManagement: React.FC = () => {
     const [editingOrder, setEditingOrder] = useState<Order | null>(null);
     const [tabValue, setTabValue] = useState(0);
     const [orderDetails, setOrderDetails] = useState<OrderDetail[]>([]);
+    
+    // Pagination and search states
+    const [page, setPage] = useState(1);
+    const [rowsPerPage] = useState(15);
+    const [totalPages, setTotalPages] = useState(1);
+    const [searchQuery, setSearchQuery] = useState('');
     
     // Form data cho đơn hàng
     const [formData, setFormData] = useState({
@@ -108,11 +116,28 @@ const OrderManagement: React.FC = () => {
         fetchUsers();
     }, []);
 
+    useEffect(() => {
+        // Filter orders based on search query
+        const filtered = orders.filter(order => 
+            (order.username && order.username.toLowerCase().includes(searchQuery.toLowerCase())) ||
+            (order.customer_name && order.customer_name.toLowerCase().includes(searchQuery.toLowerCase())) ||
+            (order.customer_email && order.customer_email.toLowerCase().includes(searchQuery.toLowerCase())) ||
+            (order.order_status && order.order_status.toLowerCase().includes(searchQuery.toLowerCase())) ||
+            (order.order_id.toString().includes(searchQuery))
+        );
+        
+        setFilteredOrders(filtered);
+        setTotalPages(Math.ceil(filtered.length / rowsPerPage));
+        setPage(1); // Reset to first page on new search
+    }, [searchQuery, orders, rowsPerPage]);
+
     const fetchOrders = async () => {
         try {
             setLoading(true);
             const response = await getOrders();
             setOrders(response.data);
+            setFilteredOrders(response.data);
+            setTotalPages(Math.ceil(response.data.length / rowsPerPage));
         } catch (error) {
             console.error('Không thể lấy dữ liệu đơn hàng:', error);
             enqueueSnackbar('Không thể lấy danh sách đơn hàng', { variant: 'error' });
@@ -446,20 +471,54 @@ const OrderManagement: React.FC = () => {
         }
     };
 
+    // Add new handlers for pagination and search
+    const handlePageChange = (event: React.ChangeEvent<unknown>, value: number) => {
+        setPage(value);
+    };
+    
+    const handleSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+        setSearchQuery(event.target.value);
+    };
+    
+    // Get current page items
+    const getCurrentItems = () => {
+        const startIndex = (page - 1) * rowsPerPage;
+        const endIndex = startIndex + rowsPerPage;
+        return filteredOrders.slice(startIndex, endIndex);
+    };
+
     return (
         <Layout>
             <Box sx={{ mb: 4 }}>
                 <Typography variant="h4" gutterBottom>
                     Quản lý đơn hàng
                 </Typography>
-                <Button 
-                    variant="contained" 
-                    startIcon={<AddIcon />} 
-                    onClick={() => handleOpenDialog()}
-                    sx={{ mb: 2 }}
-                >
-                    Tạo đơn hàng mới
-                </Button>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+                    <Button 
+                        variant="contained" 
+                        startIcon={<AddIcon />} 
+                        onClick={() => handleOpenDialog()}
+                    >
+                        Tạo đơn hàng mới
+                    </Button>
+                </Box>
+                
+                <Box sx={{ mb: 3 }}>
+                    <TextField
+                        fullWidth
+                        placeholder="Tìm kiếm theo mã đơn hàng, tên khách hàng, email hoặc trạng thái..."
+                        variant="outlined"
+                        value={searchQuery}
+                        onChange={handleSearchChange}
+                        InputProps={{
+                            startAdornment: (
+                                <InputAdornment position="start">
+                                    <SearchIcon />
+                                </InputAdornment>
+                            ),
+                        }}
+                    />
+                </Box>
                 
                 <TableContainer component={Paper}>
                     <Table>
@@ -479,12 +538,12 @@ const OrderManagement: React.FC = () => {
                                 <TableRow>
                                     <TableCell colSpan={7} align="center">Đang tải...</TableCell>
                                 </TableRow>
-                            ) : orders.length === 0 ? (
+                            ) : getCurrentItems().length === 0 ? (
                                 <TableRow>
                                     <TableCell colSpan={7} align="center">Không có dữ liệu</TableCell>
                                 </TableRow>
                             ) : (
-                                orders.map((order) => (
+                                getCurrentItems().map((order) => (
                                     <TableRow key={order.order_id}>
                                         <TableCell>{order.order_id}</TableCell>
                                         <TableCell>
@@ -521,6 +580,19 @@ const OrderManagement: React.FC = () => {
                         </TableBody>
                     </Table>
                 </TableContainer>
+                
+                {!loading && filteredOrders.length > 0 && (
+                    <Box sx={{ display: 'flex', justifyContent: 'center', mt: 3 }}>
+                        <Pagination 
+                            count={totalPages} 
+                            page={page} 
+                            onChange={handlePageChange} 
+                            color="primary" 
+                            showFirstButton 
+                            showLastButton
+                        />
+                    </Box>
+                )}
 
                 {/* Dialog Thêm/Sửa Đơn hàng */}
                 <Dialog open={openDialog} onClose={handleCloseDialog} maxWidth="md" fullWidth>

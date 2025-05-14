@@ -4,7 +4,7 @@ import {
     TableRow, Button, IconButton, Dialog, DialogActions, DialogContent, DialogTitle, 
     TextField, MenuItem, Select, FormControl, InputLabel, Chip, Avatar, 
     FormHelperText, CircularProgress, InputAdornment, Tooltip, Tab, Tabs, SelectChangeEvent,
-    List, ListItem, ListItemText, Divider
+    List, ListItem, ListItemText, Divider, Pagination
 } from '@mui/material';
 import { styled } from '@mui/material/styles';
 import EditIcon from '@mui/icons-material/Edit';
@@ -16,6 +16,7 @@ import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
 import DescriptionIcon from '@mui/icons-material/Description';
 import LocalOfferIcon from '@mui/icons-material/LocalOffer';
 import PercentIcon from '@mui/icons-material/Percent';
+import SearchIcon from '@mui/icons-material/Search';
 import Layout from '../components/Layout';
 import { 
     getProducts, createProduct, updateProduct, deleteProduct, getCategories,
@@ -85,12 +86,19 @@ const formatDate = (dateString: string) => {
 
 const ProductManagement: React.FC = () => {
     const [products, setProducts] = useState<Product[]>([]);
+    const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
     const [categories, setCategories] = useState<Category[]>([]);
     const [loading, setLoading] = useState(true);
     const [openDialog, setOpenDialog] = useState(false);
     const [editingProduct, setEditingProduct] = useState<Product | null>(null);
     const [tabValue, setTabValue] = useState(0);
     const [uploadingImage, setUploadingImage] = useState(false);
+    
+    // Pagination and search states
+    const [page, setPage] = useState(1);
+    const [rowsPerPage] = useState(15);
+    const [totalPages, setTotalPages] = useState(1);
+    const [searchQuery, setSearchQuery] = useState('');
     
     // Promotion dialog
     const [openPromotionDialog, setOpenPromotionDialog] = useState(false);
@@ -116,6 +124,20 @@ const ProductManagement: React.FC = () => {
         fetchProducts();
         fetchCategories();
     }, []);
+
+    useEffect(() => {
+        // Filter products based on search query
+        const filtered = products.filter(product => 
+            product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            (product.description && product.description.toLowerCase().includes(searchQuery.toLowerCase())) ||
+            product.category_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            product.product_id.toString().includes(searchQuery)
+        );
+        
+        setFilteredProducts(filtered);
+        setTotalPages(Math.ceil(filtered.length / rowsPerPage));
+        setPage(1); // Reset to first page on new search
+    }, [searchQuery, products, rowsPerPage]);
 
     const fetchProducts = async () => {
         try {
@@ -167,6 +189,8 @@ const ProductManagement: React.FC = () => {
             );
             
             setProducts(productsWithDiscounts);
+            setFilteredProducts(productsWithDiscounts);
+            setTotalPages(Math.ceil(productsWithDiscounts.length / rowsPerPage));
         } catch (error) {
             console.error('Không thể lấy dữ liệu sản phẩm:', error);
             enqueueSnackbar('Không thể lấy danh sách sản phẩm', { variant: 'error' });
@@ -415,6 +439,22 @@ const ProductManagement: React.FC = () => {
         setPromoTabValue(newValue);
     };
 
+    // Add new handlers for pagination and search
+    const handlePageChange = (event: React.ChangeEvent<unknown>, value: number) => {
+        setPage(value);
+    };
+    
+    const handleSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+        setSearchQuery(event.target.value);
+    };
+    
+    // Get current page items
+    const getCurrentItems = () => {
+        const startIndex = (page - 1) * rowsPerPage;
+        const endIndex = startIndex + rowsPerPage;
+        return filteredProducts.slice(startIndex, endIndex);
+    };
+
     return (
         <Layout>
             <Box sx={{ p: 3 }}>
@@ -427,6 +467,23 @@ const ProductManagement: React.FC = () => {
                     >
                         Thêm Sản phẩm
                     </Button>
+                </Box>
+
+                <Box sx={{ mb: 3 }}>
+                    <TextField
+                        fullWidth
+                        placeholder="Tìm kiếm theo tên, mô tả, danh mục hoặc ID sản phẩm..."
+                        variant="outlined"
+                        value={searchQuery}
+                        onChange={handleSearchChange}
+                        InputProps={{
+                            startAdornment: (
+                                <InputAdornment position="start">
+                                    <SearchIcon />
+                                </InputAdornment>
+                            ),
+                        }}
+                    />
                 </Box>
 
                 <TableContainer component={Paper}>
@@ -449,12 +506,12 @@ const ProductManagement: React.FC = () => {
                                 <TableRow>
                                     <TableCell colSpan={9} align="center">Đang tải...</TableCell>
                                 </TableRow>
-                            ) : products.length === 0 ? (
+                            ) : getCurrentItems().length === 0 ? (
                                 <TableRow>
                                     <TableCell colSpan={9} align="center">Không có dữ liệu</TableCell>
                                 </TableRow>
                             ) : (
-                                products.map((product) => (
+                                getCurrentItems().map((product) => (
                                     <TableRow key={product.product_id}>
                                         <TableCell>{product.product_id}</TableCell>
                                         <TableCell>
@@ -533,6 +590,19 @@ const ProductManagement: React.FC = () => {
                         </TableBody>
                     </Table>
                 </TableContainer>
+                
+                {!loading && filteredProducts.length > 0 && (
+                    <Box sx={{ display: 'flex', justifyContent: 'center', mt: 3 }}>
+                        <Pagination 
+                            count={totalPages} 
+                            page={page} 
+                            onChange={handlePageChange} 
+                            color="primary" 
+                            showFirstButton 
+                            showLastButton
+                        />
+                    </Box>
+                )}
 
                 {/* Dialog Thêm/Sửa Sản phẩm */}
                 <Dialog 
