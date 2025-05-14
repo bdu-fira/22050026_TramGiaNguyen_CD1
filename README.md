@@ -2,6 +2,11 @@
 
 Đây là file giới thiệu chung, chi tiết về cách triển khai và chạy ứng dụng sẽ có trong file README riêng của từng phiên bản bên trên.
 
+## THÀNH VIÊN
+1. ** Nguyễn Kỳ Quang
+2. ** Trầm Gia Nguyên
+3. ** Trần Minh Huân
+
 ## TỔNG QUAN
 
 Dự án Gamine là một nền tảng thương mại điện tử hoàn chỉnh chuyên về các sản phẩm gaming, bao gồm giao diện người dùng và hệ thống quản trị. Dự án được xây dựng với kiến trúc 3 thành phần chính:
